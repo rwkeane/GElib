@@ -1,6 +1,12 @@
 import math
 
 class Location:
+  """
+  Defines an (x,y,z) coordinate for a given point in the point cloud.
+
+  TODO: Should this be limited to specifically 3 dimensions? It would be pretty
+  easy to generalize as needed.
+  """
   def __init__(self, x : float, y : float, z : float):
     self.x_ = x
     self.y_ = y

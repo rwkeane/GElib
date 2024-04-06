@@ -5,6 +5,10 @@ from gelib import Point, LayerBase
 
 TResultType = TypeVar('TResultType')
 class Layer(LayerBase, Generic[TResultType]):
+  """
+  Represents a single layer of the network. A network will consist of a series
+  of layers and an associated ordering.
+  """
   def __init__(self, channel_count):
     super().__init__(self, channel_count)
 

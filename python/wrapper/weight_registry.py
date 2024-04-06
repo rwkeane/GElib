@@ -3,6 +3,11 @@ from typing import Any, Dict, TypeVar, Generic
 
 TRegistryValue = TypeVar('TRegistryValue')
 class WeightRegistry(Generic[TRegistryValue]):
+  """
+  This class is responsible for maintaining the weights assocaited with the
+  parent instance. State is maintained as "Initializing" and "Running", where
+  new weights can only be created during the former.
+  """
   class State(Enum):
     kInitializing = 1
     kRunning = 2
@@ -15,6 +20,10 @@ class WeightRegistry(Generic[TRegistryValue]):
     self.state_ = WeightRegistry.State.kRunning
 
   def createWeight(self, key, value : TRegistryValue):
+    """
+    Creates a new weight associated with key |key|. Cannot be called on keys
+    which already have a value assigned.
+    """
     assert self.state_ == WeightRegistry.State.kInitializing 
     assert key != None
     assert value != None
@@ -23,6 +32,10 @@ class WeightRegistry(Generic[TRegistryValue]):
     self.weight_assignments_ = value
 
   def getWeight(self, key) -> TRegistryValue:
+    """
+    Gets the weight associated with previously created key. May only be called
+    on valid keys.
+    """
     assert key != None
 
     value = self.weight_assignments_[self]

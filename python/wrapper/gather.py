@@ -8,6 +8,12 @@ def gather(aggregation_function : Callable[[List[TAggType]], TAggType],
            points_to_aggregate_over : List[Point],
            process_points : Callable[[Point, Point], TAggType],
            weight_registry : WeightRegistry) -> TAggType:
+  """
+  Gathers the points within |points_to_aggregate_over|, calculating
+  |process_points| for each point with |origin_point|, and applying weights
+  as defined in |weight_registry|, if such weights exist. These values are then
+  aggregated according to |aggregation_function|.
+  """
   values = []
   for point in points_to_aggregate_over:
     new_value = process_points(origin_point, point)

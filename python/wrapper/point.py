@@ -4,6 +4,10 @@ from typing import List
 from gelib import Point, WeightRegistry
 
 class Point(WeightRegistry):
+  """
+  Represents a single point in the point cloud. Users should only call the
+  functions visible here.
+  """
   def __init__(self):
     super().__init__(self)
 
@@ -17,6 +21,8 @@ class Point(WeightRegistry):
   def channel(self) -> int:
     pass
 
+  # TODO: This might be better as a parameter to the layer's ForwardPass
+  # functions.
   @property
   @abstractmethod
   def vector(self): # Unsure what this type should be

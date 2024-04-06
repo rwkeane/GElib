@@ -3,9 +3,18 @@ from typing import Any, Callable, Generic, List, TypeVar
 from gelib import Layer, Network, NetworkConfig, PointBase, PointConfig
 
 class NetworkImpl(Network):
-  def __init__(self, layers : List[Layer],
+  """
+  Implementation of the publicly visible Network class. Hides all of the
+  internals from the users so they can't mess up the internal state.
+  """
+  def __init__(self,
+               layers : List[Layer],
                network_config : NetworkConfig,
                point_config : PointConfig = PointConfig()):
+    """
+    Creates a new network consisting of |layers| which will be processed in
+    order. Points will be created according to |network_config|.
+    """
     self.layers_ : List[Layer] = layers
 
     self.points_ : List[PointBase] = []

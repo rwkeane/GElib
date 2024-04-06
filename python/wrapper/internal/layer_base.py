@@ -4,6 +4,10 @@ from typing import Any, Dict, List, TypeVar, Generic
 from gelib import PointBase, PointImpl, WeightRegistry
 
 class LayerBase(WeightRegistry):
+  """
+  Base class for the publicly accessible Layer class. Hides all of the internals
+  so that library users can't mess them up.
+  """
   def __init__(self, channel_count):
     self.channel_count_ : int = channel_count
     self.points_ : List[PointImpl] = []

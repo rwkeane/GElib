@@ -12,10 +12,19 @@ class PointConfig:
     self.use_parity = use_parity
 
 class NetworkConfig:
+  """
+  The configuration to be used for the network
+  """
   def __init__(self, point_locations : List[Location]):
     self.locations = point_locations
 
 class Network:
+  """
+  The publically accessible parts of a Network. Users should only call the
+  functions visible here, and should create a new instance using CreateNetwork()
+  below.
+  """
+  
   @abstractmethod
   def doForwardPass(self):
     pass
@@ -24,7 +33,7 @@ class Network:
   def doBackwardPass(self):
     pass
 
-def CreateNetwork(layers : List[Layer],
+def createNetwork(layers : List[Layer],
                   network_config : NetworkConfig,
                   point_config : PointConfig = PointConfig()) -> Network:
   return NetworkImpl(layers, network_config, point_config)

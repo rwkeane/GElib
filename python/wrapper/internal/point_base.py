@@ -5,6 +5,10 @@ from typing import List
 from gelib import LayerBase, Location, Point
 
 class PointBase(Point):
+  """
+  Partial implementation of a point. Excludes information that is specific to
+  a single layer, such as the channel.
+  """
   def __init__(self, location : Location, parity : bool):
     super().__init__(self)
     self.location_ : Location = location

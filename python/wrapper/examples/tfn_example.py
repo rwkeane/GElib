@@ -1,6 +1,7 @@
 from typing import Any, Callable, Generic, List, TypeVar
 
-from gelib import gather, calculateCGProduct, Layer, Point
+from gelib import gather, calculateCGProduct, createNetwork, Layer, Network, \
+                  Point
 
 class TensorFieldNetworkCGLayer(Layer):
   def __init__(self, distance_cutoff : float):
@@ -34,3 +35,17 @@ class TensorFieldNetworkSelfInteractionLayer(Layer):
                   point.getOtherChannels(),
                   identity, # Does nothing
                   point)
+  
+if __name__ == "__main__":
+    # 1. Define config for network.
+    
+
+    # 2. Create new layers
+
+
+    # 3. Use createNetwork() to create a network.
+    
+
+    # 4. Forward pass, backward pass, repeat.
+    
+    pass
