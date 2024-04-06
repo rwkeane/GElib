@@ -1,12 +1,12 @@
 from abc import abstractmethod, property
 from typing import Any, Dict, TypeVar, Generic
 
-from gelib import Point, WeightRegistry
+from gelib import Point, LayerBase
 
 TResultType = TypeVar('TResultType')
-class Layer(WeightRegistry, Generic[TResultType]):
-  def __init__(self):
-    super().__init__(self)
+class Layer(LayerBase, Generic[TResultType]):
+  def __init__(self, channel_count):
+    super().__init__(self, channel_count)
 
   def InitializePoint(self, point : Point):
     """

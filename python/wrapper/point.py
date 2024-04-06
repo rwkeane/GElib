@@ -9,24 +9,24 @@ class Point(WeightRegistry):
 
   @property
   @abstractmethod
-  def parity() -> bool:
+  def parity(self) -> bool:
     pass
   
   @property
   @abstractmethod
-  def channel() -> int:
+  def channel(self) -> int:
     pass
 
   @property
   @abstractmethod
-  def vector(): # Unsure what this type should be
+  def vector(self): # Unsure what this type should be
     pass
 
   @abstractmethod
-  def getNeighbors(distance : float) -> List[Point]:
+  def getNeighbors(self, distance : float) -> List[Point]:
     pass
 
   @abstractmethod
-  def getOtherChannels() -> List[Point]:
+  def getOtherChannels(self) -> List[Point]:
     pass
   

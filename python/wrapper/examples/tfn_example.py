@@ -19,7 +19,7 @@ class TensorFieldNetworkCGLayer(Layer):
                   calculateCGProduct,
                   point)
   
-class TensorFieldNetworkCGLayer(Layer):
+class TensorFieldNetworkSelfInteractionLayer(Layer):
   def __init__(self):
     super().__init__()
 

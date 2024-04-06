@@ -1,6 +1,7 @@
+from abc import abstractmethod, property
 from typing import Any, Callable, Generic, List, TypeVar
 
-from gelib import Layer, Point
+from gelib import Layer, Location, NetworkImpl
 
 class PointConfig:
   """
@@ -8,38 +9,22 @@ class PointConfig:
   to determine whether two points are unique.
   """
   def __init__(self, use_parity = False):
-    self.use_parity = False
+    self.use_parity = use_parity
+
+class NetworkConfig:
+  def __init__(self, point_locations : List[Location]):
+    self.locations = point_locations
 
 class Network:
-  def __init__(self, layers : List[Layer],
-               network_configuration,
-               point_config : PointConfig = PointConfig()):
-    self.layers_ : List[Layer] = layers
-
-    self.points_ : List[Point] = []
-    # Create points based on config
-
-    # Initialize all points
-    for point in self.points_:
-      for layer in self.layers_:
-        layer.InitializePoint(point)
-
-    for point in self.points_:
-      point.setRunning()
-
-    for layer in self.layers_:
-      layer.setRunning()
-
+  @abstractmethod
   def doForwardPass(self):
-    for layer in self.layers_:
-      for point in self.points_:
-        layer.forwardPassForVertices(point)
-        for point2 in self.points_:
-          if point == point2:
-            continue
-
-          layer.forwardPassForEdges(point, point2)
-
-  def doBackwardPass(self):
-    # TODO
     pass
+
+  @abstractmethod
+  def doBackwardPass(self):
+    pass
+
+def CreateNetwork(layers : List[Layer],
+                  network_config : NetworkConfig,
+                  point_config : PointConfig = PointConfig()) -> Network:
+  return NetworkImpl(layers, network_config, point_config)
