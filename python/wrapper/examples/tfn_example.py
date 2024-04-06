@@ -6,34 +6,34 @@ from gelib import gather, calculateCGProduct, createNetwork, Layer, Network, \
 class TensorFieldNetworkCGLayer(Layer):
   def __init__(self, distance_cutoff : float):
     self.distance_cutoff_ = distance_cutoff
-    super().__init__()
+    super().__init__(self)
 
   def InitializePoint(self, point : Point):
     neighbors = point.getNeighbors(self.distance_cutoff_)
     for neighbor in neighbors:
-      point.createWeight(neighbor, kDefaultValue) # kDefaultValue TBD
+      point.createWeight(neighbor, kDefaultValue) # TODO: kDefaultValue TBD
 
   def forwardPassForVertices(self, point : Point):
     return gather(sum,
                   point,
                   point.getNeighbors(self.distance_cutoff_),
-                  calculateCGProduct,
+                  calculateCGProduct, # TODO: Define this function.
                   point)
   
 class TensorFieldNetworkSelfInteractionLayer(Layer):
   def __init__(self):
-    super().__init__()
+    super().__init__(self)
 
   def InitializePoint(self, point : Point):
     other_channels = point.getOtherChannels()
     for channel_point in other_channels:
-      point.createWeight(channel_point, kDefaultValue) # kDefaultValue TBD
+      point.createWeight(channel_point, kDefaultValue) # TODO: kDefaultValue TBD
 
   def forwardPassForVertices(self, point : Point):
     return gather(sum,
                   point,
                   point.getOtherChannels(),
-                  identity, # Does nothing
+                  identity, # TODO: Define this function.
                   point)
   
 if __name__ == "__main__":

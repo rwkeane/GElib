@@ -28,7 +28,7 @@ class PointBase(Point):
     pass
 
   @property
-  def location(self): # Unsure what this type should be
+  def location(self) -> Location:
     return self.location_
 
   def distance(self, other_point):
