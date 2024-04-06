@@ -28,11 +28,8 @@ class NetworkImpl(Network):
         self.points_.append(PointBase(location, parity))
     for layer in self.layers_:
       layer.assignPoints(self.points_)
-
-    # Initialize all points.
-    for point in self.points_:
-      for layer in self.layers_:
-        layer.InitializePoint(point)
+    for layer in self.layers_:
+      layer.initializeAllPoints()
 
     # Set points and layers as running so no more weights get created.
     for point in self.points_:

@@ -16,7 +16,7 @@ class TensorFieldNetworkCGLayer(Layer):
   def forwardPassForVertices(self, point : Point):
     return gather(sum,
                   point,
-                  point.getNeighbors(self.distance_cutoff),
+                  point.getNeighbors(self.distance_cutoff_),
                   calculateCGProduct,
                   point)
   
@@ -47,5 +47,5 @@ if __name__ == "__main__":
     
 
     # 4. Forward pass, backward pass, repeat.
-    
+
     pass

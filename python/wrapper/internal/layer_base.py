@@ -20,3 +20,7 @@ class LayerBase(WeightRegistry):
     for point_base in point_bases:
       for channel in range(self.channels_):
         self.points_.append(PointImpl(point_base, channel))
+
+  def initializeAllPoints(self):
+    for point in self.points_:
+      self.initializePoint(point)

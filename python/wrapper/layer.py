@@ -12,7 +12,7 @@ class Layer(LayerBase, Generic[TResultType]):
   def __init__(self, channel_count):
     super().__init__(self, channel_count)
 
-  def InitializePoint(self, point : Point):
+  def initializePoint(self, point : Point):
     """
     To be overridden by children that need to do per-point initialization, such
     as creating a weight assignment for each point.
