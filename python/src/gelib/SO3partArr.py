@@ -12,8 +12,13 @@
 import torch
 from cnine import rtensor as _rtensor
 from cnine import ctensor as _ctensor
+<<<<<<< HEAD
 from ..gelib_base import SO3partB_array as _SO3partB_array
 from ..gelib_base import add_conterpolate3dB, add_conterpolate3dB_back
+=======
+from gelib_base import SO3partB_array as _SO3partB_array
+from gelib_base import SO3part
+>>>>>>> d238012 (draft written but untested)
 
 
 class SO3partArr(torch.Tensor):
@@ -59,7 +64,16 @@ class SO3partArr(torch.Tensor):
         """
         return SO3partArr(torch.randn([b]+_adims+[2*l+1,n,2],device=device))
         #return torch.view_as_complex(SO3partArr(torch.randn([b]+_adims+[2*l+1,n,2],device=device)))
-
+    
+    @staticmethod
+    def createCopies(part : SO3part, count : int, device: str ='cpu'):
+        """
+        Creates an SO(3)-partArr of length |count| by copying |part| to each idx
+        """        
+        R = SO3partArr(torch.zeros(count,device=device))
+        for i in range(count):
+            R[i] = part.copy()
+        return R
 
     @classmethod
     def spharm(self, l, X, device='cpu'):
@@ -67,7 +81,7 @@ class SO3partArr(torch.Tensor):
         Return the spherical harmonics of the vector (x,y,z)
         """
         assert(X.size(-2)==3)
-        R =SO3partArr.zeros(X.size(0),list(X.size())[1:X.dim()-2], l, X.size(-1), device='cpu')
+        R =SO3partArr.zeros(X.size(0),list(X.size())[1:X.dim()-2], l, X.size(-1), device=device)
         _SO3partB_array.view(R).add_spharm(X)
         return R.to(device)
 
