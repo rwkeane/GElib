@@ -10,3 +10,5 @@ python/cnine
 *.egg
 *.egg-info
 *.so
+
+.vscode

@@ -13,7 +13,7 @@ import torch
 from gelib_base import SO3partB_array as _SO3partB_array
 from gelib_base import SO3vecB_array as _SO3vecB_array
 
-from gelib import *
+from gelib import SO3weights, SO3weightsArr
 
 
 ## ----------------------------------------------------------------------------------------------------------
@@ -566,7 +566,7 @@ class SO3vecArr_DDiagCGproductFn(torch.autograd.Function):
         ctx.save_for_backward(*args)
 
         adims=list(args[0].size()[0:args[0].dim()-2])
-        tau=DDiagCGproductType(tau_type(args[0:k1]),maxl)
+        tau=DiagCGproductType(tau_type(args[0:k1]),maxl)
         r=MakeZeroSO3partArrs(adims,tau,args[0].device)
         
         _x=_SO3vecB_array.view(args[0:k1]);

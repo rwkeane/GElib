@@ -14,7 +14,7 @@ from gelib_base import SO3partB as _SO3partB
 from gelib_base import SO3vecB as _SO3vecB
 #from gelib_base import SO3Fvec as _SO3Fvec
 
-from gelib import *
+from gelib import SO3part, SO3weights
 
 
 # ----------------------------------------------------------------------------------------------------------
@@ -505,7 +505,7 @@ class SO3vec_FFTFn(torch.autograd.Function):
 
         fg=torch.zeros_like(inputs[0])
         _fg=ctensorb.view(fg)
-        _vg.add_iFFT_to(_fg)
+        vg.add_iFFT_to(_fg)
         
         return tuple([None, fg])
 

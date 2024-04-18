@@ -13,7 +13,7 @@ from gelib_base import SO3bipart as _SO3bipart
 from gelib_base import SO3bivec as _SO3bivec
 from gelib_base import SO3bivecArray as _SO3bivecArr
 
-from gelib import SO3bipartArr as SO3bipartArr
+from gelib import SO3vecArrC
 
 
 def device_id(device):
@@ -41,7 +41,7 @@ class SO3bivecArr(torch.Tensor):
 
     @classmethod
     def dummy(self):
-        R=SO3bibivecArr(1)
+        R=SO3bivecArr(1)
         #R.obj=_ptensors0.dummy()
         return R
 
@@ -162,6 +162,7 @@ class SO3bivecArr_CGtransformFn(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, x, maxl):
+        # TODO: _CGtransform is undefined.
         tau=_CGtransform(x.obj.get_tau(),maxl)
         r = SO3vecArrC.zeros(x.getb(),x.get_adims(),tau,x.get_device())
         x.obj.add_CGtransform_to(r.obj)
