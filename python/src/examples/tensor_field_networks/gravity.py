@@ -1,15 +1,20 @@
+
+import torch
+from torch.nn import Linear, Module, Parameter, ReLU, Sequential
+from torch_geometric.data import Data, DataLoader
+from typing import Any, Callable, Generic, List, TypeVar
+
 from cmath import sqrt
 import math
 import random
-import torch
-from torch.nn import Linear, Module, Parameter, ReLU, Sequential
-from typing import Any, Callable, Generic, List, TypeVar
-from torch_geometric.data import Data, DataLoader
 import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 
-from gelib import PointConvolutionLayer, SelfInteractionLayer, TfnNonlinearityLayer, createCompleteGraph
+from python.src.examples.tensor_field_networks.nonlinearity_layer import TfnNonlinearityLayer
+from .point_convolution_layer import PointConvolutionLayer
+from .self_interaction_layer import SelfInteractionLayer
+from .tfn_utils import createGraphData
 
 # This file defines an implementation of the "gravity" test described in the
 # original Tensor Field Networks paper. This test was chosen because the data
@@ -156,7 +161,7 @@ if __name__=="__main__":
                                      min_separation=min_separation)
         
         # Create a complete graph with masses as features
-        data = createCompleteGraph(torch.tensor(rand_masses).unsqueeze(1))
+        data = createGraphData(torch.tensor(rand_masses).unsqueeze(1))
         
         # Calculate accelerations 
         accel = torch.tensor(accelerations(rand_points)).unsqueeze(1)
@@ -176,7 +181,7 @@ if __name__=="__main__":
                 val_points, val_masses = random_points_and_masses(max_points=10, min_separation=min_separation)
                 
                 # Create validation data
-                val_data = createCompleteGraph(torch.tensor(val_masses).unsqueeze(1))
+                val_data = createGraphData(torch.tensor(val_masses).unsqueeze(1))
                 val_data.pos = torch.tensor(val_points)  # Set node positions
 
                 # Calculate validation accelerations

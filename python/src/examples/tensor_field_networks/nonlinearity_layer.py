@@ -1,12 +1,12 @@
 
 import math
 import torch
-from torch.nn import Linear, Module, Parameter, ReLU, Sequential
+from torch_geometric.nn import MessagePassing
 from typing import Any, Callable, Generic, List, TypeVar
 
-import gelib
+from .. import SO3partArr
 
-class TfnNonlinearityLayer(Module):
+class TfnNonlinearityLayer(MessagePassing):
     def __init__(self,
                  in_channels : int,
                  out_channels : int,
@@ -16,7 +16,7 @@ class TfnNonlinearityLayer(Module):
         self.nonlinearity = nonlinearity_fn
 
         self.reset_parameters()
-    def forward(self, x):
+    def forward(self, x, edge_index, edge_attr):
         # TODO: This may or may not be needed.
         # x = self.lin(x)
 
@@ -42,7 +42,7 @@ class TfnNonlinearityLayer(Module):
         # Get a copy of the spherical harmonics for each channel
         spherical_harmonic = self.getSphericalHarmonicsForMessage(i, j)
         spherical_harmonic_arr = \
-            gelib.SO3partArr.createCopies(spherical_harmonic, self.in_channels)
+            SO3partArr.createCopies(spherical_harmonic, self.in_channels)
         
         # Calculate the CG Product and multiply each idx by the associated R
         # value.
