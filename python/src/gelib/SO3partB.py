@@ -9,7 +9,7 @@
 
 import torch
 from cnine import ctensorb 
-from gelib_base import SO3partB as _SO3partB
+from ..gelib_base import SO3partB as _SO3partB
 
 
 # ----------------------------------------------------------------------------------------------------------

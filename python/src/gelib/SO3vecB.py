@@ -9,10 +9,10 @@
 
 import torch
 from cnine import ctensorb 
-from gelib_base import SO3type as _SO3type
-from gelib_base import SO3partB as _SO3partB
-from gelib_base import SO3vecB as _SO3vecB
-from gelib import SO3partB
+from ..gelib_base import SO3type as _SO3type
+from ..gelib_base import SO3partB as _SO3partB
+from ..gelib_base import SO3vecB as _SO3vecB
+from . import SO3partB
 
 # ----------------------------------------------------------------------------------------------------------
 # ---- SO3vecB ---------------------------------------------------------------------------------------------
@@ -149,6 +149,7 @@ class SO3vecB(torch.Tensor):
     def __add__(self,y):
         print("add")
         r=SO3vecB(1)
+        # TODO: Here and below, what is obj?
         r.obj=obj.plus(y)
         return r
         
@@ -287,6 +288,7 @@ class SO3vecB_ToTorchTensorsFn(torch.autograd.Function):
     @staticmethod
     def forward(ctx,x):
         ctx.x=x
+        # TODO: What is obj?
         return obj.view_of_grad().torch()
 
     @staticmethod

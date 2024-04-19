@@ -8,15 +8,15 @@
 # with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import torch
-from gelib_base import SO3type as _SO3type
-from gelib_base import SO3part as _SO3part
-from gelib_base import SO3vec as _SO3vec
-from gelib_base import SO3partArray as _SO3partArray
-from gelib_base import SO3vecArray as _SO3vecArray
-from gelib_base import CGproduct as _CGproduct
+from ..gelib_base import SO3type as _SO3type
+from ..gelib_base import SO3part as _SO3part
+from ..gelib_base import SO3vec as _SO3vec
+from ..gelib_base import SO3partArray as _SO3partArray
+from ..gelib_base import SO3vecArray as _SO3vecArray
+from ..gelib_base import CGproduct as _CGproduct
 
-from gelib import SO3partArrC as SO3partArrC
-from gelib import SO3vecC as SO3vecC
+from . import SO3partArrC as SO3partArrC
+from . import SO3vecC as SO3vecC
 
 
 def device_id(device):

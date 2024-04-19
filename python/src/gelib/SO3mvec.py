@@ -11,14 +11,15 @@
 import torch
 
 from cnine import ctensorb 
-from gelib_base import SO3partB as _SO3partB
-from gelib_base import SO3vecB as _SO3vecB
-from gelib_base import SO3partB_array as _SO3partArr
-from gelib_base import SO3mvec as _SO3mvec
-from gelib_base import SO3mweights as _SO3mweights
-#from gelib_base import SO3Fvec as _SO3Fvec
+from ..gelib_base import SO3partB as _SO3partB
+from ..gelib_base import SO3vecB as _SO3vecB
+from ..gelib_base import SO3partB_array as _SO3partArr
+from ..gelib_base import SO3mvec as _SO3mvec
+from ..gelib_base import SO3mweights as _SO3mweights
+#from ..gelib_base import SO3Fvec as _SO3Fvec
 
-from gelib import SO3part
+from . import SO3part
+from . import makeZeroSO3Fparts
 
 #from SO3part import SO3part
 

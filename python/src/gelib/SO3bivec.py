@@ -8,14 +8,14 @@
 # with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import torch
-from gelib_base import SO3type as _SO3type
-from gelib_base import SO3bitype as _SO3bitype
-from gelib_base import CGtransform as _CGtransform
-from gelib_base import SO3bipart as _SO3bipart
-from gelib_base import SO3bivec as _SO3bivec
+from ..gelib_base import SO3type as _SO3type
+from ..gelib_base import SO3bitype as _SO3bitype
+from ..gelib_base import CGtransform as _CGtransform
+from ..gelib_base import SO3bipart as _SO3bipart
+from ..gelib_base import SO3bivec as _SO3bivec
 
-from gelib import SO3bipart as SO3bipart
-from gelib import SO3vecC as SO3vecC
+from . import SO3bipart as SO3bipart
+from . import SO3vecC as SO3vecC
 
 
 def device_id(device):

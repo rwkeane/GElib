@@ -10,10 +10,10 @@
 
 
 import torch
-import gelib_base
 from cnine import rtensor as _rtensor
 from cnine import ctensor as _ctensor
-from gelib_base import SO3partB_array as _SO3partB_array
+from ..gelib_base import SO3partB_array as _SO3partB_array
+from ..gelib_base import add_conterpolate3dB, add_conterpolate3dB_back
 
 
 class SO3partArr(torch.Tensor):
@@ -279,6 +279,7 @@ class SO3partArr_GatherFn(torch.autograd.Function):
         #r=MakeZeroSO3partArrs(N,b,l,n,dev)
         r=torch.zeros_like(yg) # change this
 
+        # TODO: What is args?
         _x=_SO3partB_array.view(args)
         _r=_SO3partB_array.view(r)
         _r.gather(_x,ctx.mask.inv())
@@ -331,7 +332,7 @@ class SO3partArr_ConterpolateBFn(torch.autograd.Function):
         _M=_rtensor.view(M)
         r=torch.zeros([x.getb()]+x.get_adims()+list(M.size()[:-4])+[x.getn()],dtype=torch.cfloat,device=x.device)
         _r=_ctensor.view(r)
-        gelib_base.add_conterpolate3dB(_r,_x,_M)
+        add_conterpolate3dB(_r,_x,_M)
         return r
 
     @staticmethod
@@ -341,7 +342,7 @@ class SO3partArr_ConterpolateBFn(torch.autograd.Function):
         gx=SO3partArr.zeros(ctx.b,ctx.adims,ctx.l,ctx.n,g.device)
         print(gx.size())
         _gx=_SO3partB_array.view(gx)
-        gelib_base.add_conterpolate3dB_back(_gx,_g,_M)
+        add_conterpolate3dB_back(_gx,_g,_M)
         return gx,None
 
 

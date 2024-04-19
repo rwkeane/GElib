@@ -9,9 +9,9 @@
 
 import torch
 #from cnine import ctensorb 
-from gelib_base import SO3partArray as _SO3partArray
+from ..gelib_base import SO3partArray as _SO3partArray
 
-from gelib import SO3partC as SO3partC
+from . import SO3partC
 
 
 def device_id(device):

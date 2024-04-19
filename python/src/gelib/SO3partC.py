@@ -9,7 +9,7 @@
 
 import torch
 #from cnine import ctensorb 
-from gelib_base import SO3part as _SO3part
+from ..gelib_base import SO3part as _SO3part
 
 
 def device_id(device):
