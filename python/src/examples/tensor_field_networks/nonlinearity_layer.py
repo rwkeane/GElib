@@ -4,18 +4,21 @@ import torch
 from torch_geometric.nn import MessagePassing
 from typing import Any, Callable, Generic, List, TypeVar
 
-from .. import SO3partArr
+from ...gelib import SO3partArr
 
 class TfnNonlinearityLayer(MessagePassing):
     def __init__(self,
                  in_channels : int,
                  out_channels : int,
                  nonlinearity_fn):
-        self.in_channels : int = in_channels
+        super().__init__(aggr='add')  # "Add" aggregation
+
+        self.in_channels : int = in_channels 
         self.out_channels : int = out_channels
         self.nonlinearity = nonlinearity_fn
 
         self.reset_parameters()
+
     def forward(self, x, edge_index, edge_attr):
         # TODO: This may or may not be needed.
         # x = self.lin(x)

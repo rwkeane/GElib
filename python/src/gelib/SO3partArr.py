@@ -12,13 +12,10 @@
 import torch
 from cnine import rtensor as _rtensor
 from cnine import ctensor as _ctensor
-<<<<<<< HEAD
 from ..gelib_base import SO3partB_array as _SO3partB_array
 from ..gelib_base import add_conterpolate3dB, add_conterpolate3dB_back
-=======
-from gelib_base import SO3partB_array as _SO3partB_array
-from gelib_base import SO3part
->>>>>>> d238012 (draft written but untested)
+
+from . import SO3part
 
 
 class SO3partArr(torch.Tensor):

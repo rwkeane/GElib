@@ -12,3 +12,7 @@ python/cnine
 *.so
 
 .vscode
+
+cnine.log
+GElib.log
+CGproducts.csv

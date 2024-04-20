@@ -5,8 +5,8 @@ from torch_geometric.data import Data
 from torch_geometric.nn import MessagePassing
 from typing import Any, Callable, Generic, List, TypeVar
 
-from .. import SO3part
-from .. import SO3partArr
+from ...gelib import SO3part
+from ...gelib import SO3partArr
 
 class PointConvolutionLayer(MessagePassing):
     def __init__(self,
@@ -15,6 +15,7 @@ class PointConvolutionLayer(MessagePassing):
                  l_filter: int,
                  point_positions: torch.tensor):
         super().__init__(aggr='add')  # "Add" aggregation
+        
         self.lin = Linear(in_channels, out_channels, bias=False)
 
         self.in_channels : int = in_channels

@@ -1,7 +1,6 @@
 # WE SHOULD REMOVE THE import *  !!!
 import torch
 from .. import gelib_base
-from .. import gelib
 
 from ..gelib_base import SO3element 
 from ..gelib_base import SO3type 

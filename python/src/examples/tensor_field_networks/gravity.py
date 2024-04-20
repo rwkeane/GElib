@@ -11,10 +11,13 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 
-from python.src.examples.tensor_field_networks.nonlinearity_layer import TfnNonlinearityLayer
-from .point_convolution_layer import PointConvolutionLayer
-from .self_interaction_layer import SelfInteractionLayer
-from .tfn_utils import createGraphData
+
+from src.examples.tensor_field_networks import TfnNonlinearityLayer
+from src.examples.tensor_field_networks import PointConvolutionLayer
+from src.examples.tensor_field_networks import SelfInteractionLayer
+from src.examples.tensor_field_networks import createGraphData
+
+
 
 # This file defines an implementation of the "gravity" test described in the
 # original Tensor Field Networks paper. This test was chosen because the data
@@ -22,7 +25,8 @@ from .tfn_utils import createGraphData
 
 class GravityTFN(Module):
   def __init__(self, num_classes, num_features, l_filter, point_positions):
-    super.__init__()
+    super().__init__()
+
     self.conv = PointConvolutionLayer(num_features, num_features, l_filter, point_positions)
     self.self_interaction = SelfInteractionLayer(num_features, 16)
     self.nonlin = TfnNonlinearityLayer(16, 16, torch.relu)

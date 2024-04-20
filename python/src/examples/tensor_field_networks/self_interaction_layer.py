@@ -8,6 +8,8 @@ class SelfInteractionLayer(Module):
     def __init__(self,
                  in_channels : int,
                  out_channels : int):
+        super().__init__()
+
         self.lin = Linear(in_channels, out_channels, bias=False)
 
         self.reset_parameters()
