@@ -12,10 +12,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-from src.examples.tensor_field_networks import TfnNonlinearityLayer
-from src.examples.tensor_field_networks import PointConvolutionLayer
-from src.examples.tensor_field_networks import SelfInteractionLayer
-from src.examples.tensor_field_networks import createGraphData
+from src.examples.tensor_field_networks.nonlinearity_layer import TfnNonlinearityLayer
+from src.examples.tensor_field_networks.point_convolution_layer import PointConvolutionLayer
+from src.examples.tensor_field_networks.self_interaction_layer import SelfInteractionLayer
+from src.examples.tensor_field_networks.tfn_utils import createGraphData
 
 
 
@@ -165,14 +165,16 @@ if __name__=="__main__":
                                      min_separation=min_separation)
         
         # Create a complete graph with masses as features
-        data = createGraphData(torch.tensor(rand_masses).unsqueeze(1))
+        data = createGraphData(torch.tensor(rand_masses).unsqueeze(1),
+                               torch.tensor(rand_points).unsqueeze(1),
+                               1)
         
         # Calculate accelerations 
         accel = torch.tensor(accelerations(rand_points)).unsqueeze(1)
 
         # Train the model
         optimizer.zero_grad()
-        outputs = model(data.x, data.edge_index, data.pos)
+        outputs = model(data)
         loss = criterion(outputs, accel)
         loss.backward()
         optimizer.step()

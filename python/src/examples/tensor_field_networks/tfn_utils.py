@@ -9,7 +9,7 @@ from typing import Any, Callable, Generic, List, TypeVar
 def createGraphData(default_values : torch.tensor,
                     positions : torch.tensor,
                     num_input_channels : int,
-                    max_dist : float = None):
+                    max_dist : float = None) -> Data:
   # default_values of size |point count| x |channels| x (inner dimensions)
   assert len(positions) == len(default_values)
 

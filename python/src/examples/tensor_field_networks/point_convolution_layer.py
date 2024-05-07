@@ -27,6 +27,7 @@ class PointConvolutionLayer(MessagePassing):
         # Create a list to store MLPs for each output channel to handle learning
         # the radial function for each channel, as a function of the distance
         # between 2 points.
+        #
         # TODO: Update this value
         kNumHiddenLayerNodes = 64
         self.r_mlps = torch.nn.ModuleList([
@@ -58,40 +59,60 @@ class PointConvolutionLayer(MessagePassing):
     # Constructs message from node j to node i, which is then aggregated as
     # specified in ctor.
     def message(self, x_i, x_j, edge_index):
-        i, j = edge_index
+        # edge_index has shape [2, |E|]
+        i_arr, j_arr = edge_index
 
         # Get he spherical harmonics for each channel
-        spherical_harmonic_arr = self.getFilterValue(i, j)
+        spherical_harmonic_per_channel = self.getFilterValue(i_arr, j_arr)
 
         # Calculate the CG Product and multiply each idx by the associated R
         # value.
-        cg_products = spherical_harmonic_arr.CGproduct(x_j)
+        cg_products = spherical_harmonic_per_channel.CGproduct(x_j, self.l_filter)
 
         return cg_products
     
-    def getFilterValue(self, i, j) -> SO3partArr:
+    def getFilterValue(self, i_arr, j_arr) -> SO3partArr:
         # Get a copy of the spherical harmonics for each channel
-        spherical_harmonic = self.getSphericalHarmonicsForFilter(i, j)
-        spherical_harmonic_arr = \
-            SO3partArr.createCopies(spherical_harmonic, self.in_channels)
-        assert len(spherical_harmonic_arr) == len(self.r_mlps)
+        spherical_harmonic_per_channel = \
+            self.getSphericalHarmonicsForFilter(i_arr, j_arr, self.in_channels)
         
-        # Apply the learned radial function
-        distance = self.point_distances[i,j]
-        for i in range(self.in_channels):
-            spherical_harmonic_arr[i] *= self.r_mlps[i](distance)
+        # Apply the learned radial function to distances between i and j arrays.
+        distance = self.getDistance(i_arr, j_arr).unsqueeze(-1)
+        mlp_vals = torch.stack([mlp(distance) for mlp in self.r_mlps], dim=-1)
 
-        return spherical_harmonic_arr
+        # Combine the two and return it.
+        spherical_harmonic_per_channel *= mlp_vals
+
+        return spherical_harmonic_per_channel
         
     # Gets the spherical harmonics assocaited with the self.l_filter for this
     # layer.
     # NOTE: Does NOT depend on channel number. In the original TFN paper, this
     # is the Y_m^{(l_f)}(\hat{r}) spherical harmonic for the filter
-    def getSphericalHarmonicsForFilter(self, i, j) -> SO3part:
+    def getSphericalHarmonicsForFilter(self, i_arr, j_arr, channel_count) -> SO3part:
         # Get the vector
-        i_pos = self.point_positions[i]
-        j_pos = self.point_positions[j]
-        vector = (i_pos - j_pos) / self.point_distances[i,j]
+        i_pos = self.point_positions[i_arr]
+        j_pos = self.point_positions[j_arr]
+        distance = self.getDistance(i_arr, j_arr)
+        assert len(i_pos) == len(j_pos)
+        assert len(i_pos) == len(distance)
+
+        vector = (i_pos - j_pos)
+        for k in range(len(vector)):
+            vector[k] /= distance[k]
+
+        # Extend in a new dimension by copying once per channel
+        assert vector.size()[-1] == 3
+        vector = vector.unsqueeze(-1).repeat(1, 1, channel_count)
 
         # Return the Spherical Harmonic associated with it
-        return SO3part.spharm(self.l_filter, vector)
+        return SO3partArr.spharm(self.l_filter, vector)
+    
+    def getDistance(self, i, j):
+        if isinstance(i, int):
+            assert isinstance(j, int)
+            return self.point_distances[i,j]
+        
+        assert len(i) == len(j)
+        return torch.tensor(
+            [self.point_distances[i[k],j[k]] for k in range(len(i))])
