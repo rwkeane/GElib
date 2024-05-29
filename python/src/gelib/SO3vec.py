@@ -49,6 +49,14 @@ class SO3vec:
         return R
 
     @classmethod
+    def ones(self, b, _tau,  device='cpu'):
+        "Construct a zero SO3vec object of given type _tau."
+        R = SO3vec()
+        for l in range(0, len(_tau)):
+            R.parts.append(torch.ones([b,2*l+1,_tau[l]], dtype=torch.cfloat, device=device))
+        return R
+
+    @classmethod
     def randn(self, b, _tau,  device='cpu'):
         """
         Construct a random SO3vec object of given type _tau.

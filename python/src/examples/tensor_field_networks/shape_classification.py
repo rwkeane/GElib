@@ -1,4 +1,6 @@
 import numpy as np
+from functools import partial
+
 import torch
 import torch.optim as optim
 
@@ -6,7 +8,7 @@ from src.examples.tensor_field_networks.nonlinearity_layer import TfnNonlinearit
 from src.examples.tensor_field_networks.point_convolution_layer import PointConvolutionLayer
 from src.examples.tensor_field_networks.self_interaction_layer import SelfInteractionLayer
 from src.examples.tensor_field_networks.concatenation_layer import ConcatenationLayer
-from src.examples.tensor_field_networks.tfn_utils import createGraphData
+from src.examples.tensor_field_networks.tfn_utils import createGraphDataFactory
 
 tetris = [[(0, 0, 0), (0, 0, 1), (1, 0, 0), (1, 1, 0)],  # chiral_shape_1
           [(0, 0, 0), (0, 0, 1), (1, 0, 0), (1, -1, 0)], # chiral_shape_2
@@ -20,27 +22,12 @@ tetris = [[(0, 0, 0), (0, 0, 1), (1, 0, 0), (1, 1, 0)],  # chiral_shape_1
 dataset = [np.array(points_) for points_ in tetris]
 num_classes = len(dataset)
 
-def get_inputs(r):
-    
-    # rij : [N, N, 3]
-    rij = utils.difference_matrix(r)
-
-    # dij : [N, N]
-    dij = utils.distance_matrix(r)
-
-    # rbf : [N, N, rbf_count]
-    gamma = 1. / rbf_spacing
-    rbf = torch.exp(-gamma * (dij.unsqueeze(-1) - centers)**2)
-    
-    return rij, dij, rbf
-
 class Readout(torch.nn.Module):
-    
-    def __init__(self, input_dims, num_classes):
+    def __init__(self, channels_in, num_classes):
         super(Readout, self).__init__()
         
-        self.lin = torch.nn.Linear(input_dims, num_classes,)
-        self.input_dims = input_dims
+        self.lin = torch.nn.Linear(channels_in, num_classes, bias=True)
+        self.input_dims = channels_in
         self.num_classes = num_classes
         
     def forward(self, inputs):
@@ -48,48 +35,56 @@ class Readout(torch.nn.Module):
         inputs = self.lin.forward(inputs).unsqueeze(0)
         return inputs
     
-class TetrisNetwork(torch.nn.Module):
-    def __init__(self, rbf_dim = rbf_count, num_classes = num_classes):
-        super(TetrisNetwork, self).__init__()
-        self.layer_dims = [1, 4, 4, 4]
-#         self.layer_dims = [1,4]
-        self.num_layers = len(self.layer_dims) - 1  
-        self.rbf_dim = rbf_dim
-        self.embed = layers.SelfInteractionLayer(input_dim = 1, output_dim = 1, bias = False)
+class TetrisLayer(torch.nn.module):
+    def __init__(self, in_channels, out_channels, l_value, data_factory):
+        self.data_factory = partial(data_factory, in_channels)
+
+        self.point_convolution = \
+            PointConvolutionLayer(in_channels, in_channels, l_value)
+        self.concat = ConcatenationLayer()
+        self.self_interation = \
+            SelfInteractionLayer(in_channels, out_channels, l_value)
+        self.nonlinearity = TfnNonlinearityLayer(out_channels, l_value)
+
+    def forward(self, input):
+        input = self.point_convolution.forward(self.data_factory(input))
+        input = self.concat.forward(input.x)
+        input = self.self_interation.forward(input)
+        return self.nonlinearity.forward(input)
     
-        self.layers = []
-        for layer, (layer_dim_out, layer_dim_in) in enumerate(zip(self.layer_dims[1:], self.layer_dims[:-1])):
-            self.layers.append(layers.Convolution(rbf_dim, layer_dim_in))
-            self.layers.append(layers.Concatenation())
-            self.layers.append(layers.SelfInteraction(layer_dim_in, layer_dim_out))
-            self.layers.append(layers.NonLinearity(layer_dim_out))
+class TetrisNetwork(torch.nn.Module):
+    def __init__(self, data_factory, num_classes_in = num_classes):
+        super().__init__()
+        self.as_embedding = SelfInteractionLayer(input_dim = 1, output_dim = 1, bias = False)
+
+        # Create all layers
+        self.layers = [TetrisLayer(1,4, data_factory),
+                       TetrisLayer(4,4, data_factory),
+                       TetrisLayer(4,4, data_factory)]
         self.layers = torch.nn.ModuleList(self.layers)
-        self.ones = torch.ones(1,4,1,1)
-        self.readout = Readout(self.layer_dims[-1], num_classes)
+
+        # Set the readout function to be called at the end
+        self.readout = Readout(4, num_classes_in)
         
     def forward(self, rbf, rij):
-        embed = self.embed(self.ones.repeat([rbf.size()[0],1,1,1]))   
-        input_tensor_list = {0: [embed]}
-        for il, layer in enumerate(self.layers[::4]):
-            input_tensor_list = self.layers[4*il](input_tensor_list, rbf, rij) #Convolution
-#             if il == 1:
-#                 print(input_tensor_list[0][0])
-#                 print(input_tensor_list[0][1])
-            input_tensor_list = self.layers[4*il+1](input_tensor_list) # Concatenation
-#             if il == 0:
-#                 print(input_tensor_list[1][0])
-            input_tensor_list = self.layers[4*il+2](input_tensor_list) # Self interaction
-#             if il == 2:
-#                 print(input_tensor_list[0][0])
-            input_tensor_list = self.layers[4*il+3](input_tensor_list) # Nonlinearity
-#             if il == 1:
-#                 print(input_tensor_list[0][0])
-        return self.readout(input_tensor_list[0][0])
-    
+        # TODO: Replace this with a call to GELib.
 
+        # Start with all 1s, because the tetris blocks are always seen from the
+        # same direction here.
+        embed = self.as_embedding.forward(
+            torch.ones(1,4,1,1).repeat([rbf.size()[0],1,1,1]))   
+        result = {0: [embed]}
+        for layer in self.layers:
+            result = layer.forward(result)
+
+        assert result.dim() == 2
+        first, second = result.size()
+        assert first == 1
+        assert second == 1
+        return self.readout.forward(result[0][0])
 
 if __name__=="__main__": 
-  model = TetrisNetwork()
+  model = TetrisNetwork(createGraphDataFactory(TODO))
   tetris_tensor = torch.Tensor(tetris)
 
   criterion = torch.nn.CrossEntropyLoss()

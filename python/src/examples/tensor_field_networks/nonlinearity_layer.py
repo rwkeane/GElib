@@ -1,55 +1,50 @@
 
 import math
 import torch
-from torch_geometric.nn import MessagePassing
+from torch.nn import Module
+from torch_geometric.data import Data
 from typing import Any, Callable, Generic, List, TypeVar
 
 from ...gelib import SO3partArr
 
-class TfnNonlinearityLayer(MessagePassing):
+class TfnNonlinearityLayer(Module):
     def __init__(self,
-                 in_channels : int,
-                 out_channels : int,
-                 nonlinearity_fn):
-        super().__init__(aggr='add')  # "Add" aggregation
-
-        self.in_channels : int = in_channels 
-        self.out_channels : int = out_channels
+                 channels : int,
+                 l_in : int,
+                 nonlinearity_fn = torch.relu):
+        self.channels_ : int = channels 
+        self.l_in_ = l_in
         self.nonlinearity = nonlinearity_fn
+
+        self.learnable_bias_ = torch.zeros((2 * l_in + 1, channels),
+                                           requires_grad = True)
 
         self.reset_parameters()
 
-    def forward(self, x, edge_index, edge_attr):
-        # TODO: This may or may not be needed.
-        # x = self.lin(x)
+    def reset_parameters(self):
+        for filter in self.l_filters_:
+            filter.reset_parameters()
 
-        # Calculate R_c values using MLPs
-        r_values_list = []
-        for r_mlp in self.r_mlps:
-            r_values = r_mlp(self.point_distances)
-            r_values_list.append(r_values)
-        r_values = torch.cat(r_values_list, dim=-1)  # Combine outputs
+    def forward(self, data : Data):
+        # x of shape [num_nodes, 2l_in + 1, channel_count]
+        x = data.x
 
-        # Apply R_c values to features
-        x = x * r_values.unsqueeze(-1)
+        data.x[:,0,:] = self.applyZeroNonlinearity(x[:,0,:])
+        data.x[:,1:,:] = self.applyNonZeroNonlinearity(x[:,1:,:])
+        return data
+    
+    def applyZeroNonlinearity(self, l_zero : torch.Tensor):
+        assert l_zero.dim() == 2
 
-        # Start propagating messages.
-        out = self.propagate(edge_index, x=x, edge_attr=edge_attr)
-        return out
+        bias = self.learnable_bias_[0,:].expand_as(l_zero)
+        return self.nonlinearity(l_zero + bias)
+    
+    def applyNonZeroNonlinearity(self, l_all : torch.Tensor):
+        assert l_all.dim() == 3
+        normed = torch.norm(l_all, dim = -2)
+        bias = self.learnable_bias_[1:,:].expand_as(normed)
 
-    # Constructs message from node j to node i, which is then aggregated as
-    # specified in ctor.
-    def message(self, x_i, x_j, edge_index):
-        i, j = edge_index
+        added = normed + bias
+        added = self.nonlinearity(added)
 
-        # Get a copy of the spherical harmonics for each channel
-        spherical_harmonic = self.getSphericalHarmonicsForMessage(i, j)
-        spherical_harmonic_arr = \
-            SO3partArr.createCopies(spherical_harmonic, self.in_channels)
-        
-        # Calculate the CG Product and multiply each idx by the associated R
-        # value.
-        cg_products = spherical_harmonic_arr.CGproduct(x_j)
-
-        return cg_products
-        
+        return added.expand_as(l_all) * l_all
