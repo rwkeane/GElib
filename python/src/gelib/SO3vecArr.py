@@ -38,15 +38,32 @@ class SO3vecArr:
     @staticmethod
     def zeros(b,_adims,_tau,device='cpu'):
         "Construct a zero SO3vec object of given type _tau."
+        if _adims == None:
+            _adims = []
+
         R=SO3vecArr()
         for l in range(0,len(_tau)):
             R.parts.append(torch.zeros([b]+_adims+[2*l+1,_tau[l]],dtype=torch.cfloat,device=device))
             #R.parts.append(SO3partArr.zeros(_adims,l,_tau[l],_dev))
         return R
+    
+    @staticmethod
+    def ones(b,_adims,_tau,device='cpu'):
+        "Construct a zero SO3vec object of given type _tau."
+        if _adims == None:
+            _adims = []
+
+        R=SO3vecArr()
+        for l in range(0,len(_tau)):
+            R.parts.append(torch.ones([b]+_adims+[2*l+1,_tau[l]],dtype=torch.cfloat,device=device))
+        return R
 
     @staticmethod
     def randn(b,_adims,_tau,device='cpu'):
         "Construct a random SO3vec array of given type _tau."
+        if _adims == None:
+            _adims = []
+            
         R=SO3vecArr()
         for l in range(0,len(_tau)):
             R.parts.append(torch.randn([b]+_adims+[2*l+1,_tau[l]],dtype=torch.cfloat,device=device))
@@ -56,6 +73,9 @@ class SO3vecArr:
     @staticmethod
     def Fzeros(b,_adims,maxl,device='cpu'):
         "Construct an SO3vec array corresponding the to the Forier matrices 0,1,...maxl of b functions on SO(3)."
+        if _adims == None:
+            _adims = []
+            
         R=SO3vecArr()
         for l in range(0,maxl+1):
             R.parts.append(torch.zeros([b]+_adims+[2*l+1,2*l+1],dtype=torch.cfloat,device=device))
@@ -64,6 +84,9 @@ class SO3vecArr:
     @staticmethod
     def Frandn(b,_adims,maxl,device='cpu'):
         "Construct a zero SO3Fvec array with l ranging from 0 to maxl."
+        if _adims == None:
+            _adims = []
+            
         R=SO3vecArr()
         for l in range(0,maxl+1):
             R.parts.append(torch.randn([b]+_adims+[2*l+1,2*l+1],dtype=torch.cfloat,device=device))

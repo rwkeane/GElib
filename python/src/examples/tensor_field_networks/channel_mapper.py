@@ -14,7 +14,7 @@ class ChannelMapper(Linear):
 
   def forward(self, x : torch.Tensor):
     shape = x.size()
-    shape[-1] = self.out_channels_
+    assert shape[-1] == self.out_channels_, shape
 
     result = super().forward(x.view(-1, self.in_channels_))
 

@@ -18,10 +18,12 @@ class SelfInteractionLayer(Module):
         assert l_in >= 0
 
         self.l_in_ = l_in
+        self.in_channels_ = in_channels
+        self.out_channels_ = out_channels
 
         self.l_filters_ = torch.nn.ModuleList(
-            [Linear(in_channels, out_channels, bias = (i == 0)) for i in \
-                range(2 * l_in + 1)])
+            [ Linear(in_channels, out_channels, bias = (i == 0),
+                     dtype=torch.cfloat) for i in range(2 * l_in + 1) ])
 
         self.reset_parameters()
 
@@ -30,12 +32,43 @@ class SelfInteractionLayer(Module):
             filter.reset_parameters()
 
     def forward(self, data : Data):
-        # x of shape [num_nodes, 2l_in + 1, channel_count]
+        # NOTE: this layer assumes -3 is the channel dim, of 4+.
+        # x of shape [batch, channel_count, 2l_in + 1, N atoms]
         x = data.x
         assert isinstance(x, SO3partArr)
+        assert x.size()[-3] == self.in_channels_
 
-        # Sum across channels
-        data.x = SO3partArr(torch.stack(
-            [self.l_filters_[i].forward(x[:,i,:]) for i in range(self.l_in_)]))
+        # New order [N atoms, batch, channel, 2l_in + 1]
+        order = list(range(-1, x.dim() - 1, 1))
+        permuted = x.permute(order)
+        permuted_size = permuted.size()
+        x_reshaped = permuted.view(-1, permuted_size[-2], permuted_size[-1])
+
+        # Sum across channels for each l index (do NOT mix across l vals).
+        y_reshaped = SO3partArr(torch.stack(
+            [self.l_filters_[i].forward(x_reshaped[...,i,]) \
+                for i in range(permuted_size[-1])], -1))
+        
+        # Validate it worked.
+        if __debug__:
+            expected_new_size = list(x_reshaped.size())
+            expected_new_size[-2] = self.out_channels_
+        assert __debug__  # Just to be safe.
+        assert list(y_reshaped.size()) == expected_new_size, \
+            "{0} vs {1}".format(y_reshaped.size(), expected_new_size)
+        
+        # Undo the reshaping.
+        new_size = list(permuted.size())
+        new_size[-2] = self.out_channels_
+        y = y_reshaped.view(new_size)
+
+        # Undo re-ordering.
+        order = list(range(1, y.dim(), 1))
+        order.append(0)
+        order = tuple(order)
+        y = y.permute(order)
+
+        assert y.size()[-3] == self.out_channels_
+        data.x = y
 
         return data

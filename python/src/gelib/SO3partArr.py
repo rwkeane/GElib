@@ -48,9 +48,20 @@ class SO3partArr(torch.Tensor):
         """
         Create an SO(3)-part consisting of N*b lots of n vectors transforming according to the l'th irrep of SO(3).
         The vectors are initialized to zero, resulting in an b*(2+l+1)*n dimensional complex tensor of zeros.
-        """        
+        """
+        if _adims == None:
+            _adims = []
         return SO3partArr(torch.zeros([b]+_adims+[2*l+1,n,2],device=device))
-
+    
+    @staticmethod
+    def ones(b,_adims,l,n,device='cpu'):
+        """
+        Create an SO(3)-part consisting of N*b lots of n vectors transforming according to the l'th irrep of SO(3).
+        The vectors are initialized to one, resulting in an b*(2+l+1)*n dimensional complex tensor of ones.
+        """        
+        if _adims == None:
+            _adims = []
+        return SO3partArr(torch.ones([b]+_adims+[2*l+1,n,2],device=device))
 
     @staticmethod
     def randn(b,_adims,l,n,device='cpu'):
@@ -59,25 +70,16 @@ class SO3partArr(torch.Tensor):
         The vectors are initialized as random gaussian vectors, resulting in an b*(2+l+1)*n dimensional random
         complex tensor.
         """
+        if _adims == None:
+            _adims = []
         return SO3partArr(torch.randn([b]+_adims+[2*l+1,n,2],device=device))
         #return torch.view_as_complex(SO3partArr(torch.randn([b]+_adims+[2*l+1,n,2],device=device)))
-    
-    @staticmethod
-    def createCopies(part : SO3part, count : int, device: str ='cpu'):
-        """
-        Creates an SO(3)-partArr of length |count| by copying |part| to each idx
-        """
-        R = SO3partArr(torch.zeros((count, part.size()),device=device))
-        for i in range(count):
-            R[i] = part.copy()
-        return R
 
     @classmethod
     def spharm(self, l, X, device='cpu'):
         """
         Return the spherical harmonics of the vector (x,y,z)
         """
-        assert(X.size(-2)==3), "Incorrect input size: " + str(X.size())
         R =SO3partArr.zeros(X.size(0),list(X.size())[1:X.dim()-2], l, X.size(-1), device=device)
         _SO3partB_array.view(R).add_spharm(X)
         return R.to(device)
@@ -89,6 +91,9 @@ class SO3partArr(torch.Tensor):
         Create an SO(3)-part corresponding to the l'th matrix in the Fourier transform of a function on SO(3).
         This gives a N*b*(2+l+1)*(2l+1) dimensional complex tensor. 
         """
+        if _adims == None:
+            _adims = []
+            
         return torch.view_as_complex(SO3partArr(torch.zeros([b]+_adims+[2*l+1,2*l+1,2],device=device)))
 
 
@@ -98,6 +103,9 @@ class SO3partArr(torch.Tensor):
         Create an SO(3)-part corresponding to the l'th matrix in the Fourier transform of a function on SO(3).
         This gives a b*(2+l+1)*(2l+1) dimensional complex random tensor. 
         """
+        if _adims == None:
+            _adims = []
+            
         return torch.view_as_complex(SO3partArr(torch.randn([b]+_adims+[2*l+1,2*l+1,2],device=device)))
 
 
@@ -160,6 +168,8 @@ class SO3partArr(torch.Tensor):
         """
         Compute the l component of the Clesbsch--Gordan product of this SO3partArr with another SO3partArr y.
         """
+        assert y != None
+        assert isinstance(l, int)
         return SO3partArr_CGproductFn.apply(self,y,l)
 
 
@@ -167,6 +177,8 @@ class SO3partArr(torch.Tensor):
         """
         Compute the l component of the diagonal Clesbsch--Gordan product of this SO3partArr with another SO3partArr y.
         """
+        assert y != None
+        assert isinstance(l, int)
         return SO3partArr_DiagCGproductFn.apply(self,y,l)
 
 
