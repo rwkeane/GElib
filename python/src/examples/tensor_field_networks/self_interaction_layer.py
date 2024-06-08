@@ -7,8 +7,6 @@ from torch_geometric.data import Data
 from ...gelib import SO3part
 from ...gelib import SO3partArr
 
-from src.examples.tensor_field_networks.channel_mapper import ChannelMapper
-
 class SelfInteractionLayer(Module):
     def __init__(self,
                  in_channels : int,

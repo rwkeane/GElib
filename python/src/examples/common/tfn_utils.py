@@ -11,7 +11,7 @@ from torch_geometric.utils import add_self_loops, degree
 
 from ...gelib import SO3partArr
 
-from src.examples.tensor_field_networks.pyg_helper import \
+from src.examples.common.pyg_helper import \
   reshapeInputForPyg, undoReshapeInputForPyg
 
 def createGraphData(positions : torch.Tensor,

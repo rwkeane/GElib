@@ -8,34 +8,25 @@ from typing import List, Tuple
 from ...gelib import SO3part
 from ...gelib import SO3partArr
 
-from src.examples.tensor_field_networks.channel_mapper import ChannelMapper
-from src.examples.tensor_field_networks.pyg_helper import \
+from src.examples.common.pyg_helper import \
     flattenForPygPropegate, undoFlattenForPygPropegate, reshapeInputForPyg, \
         undoReshapeInputForPyg
 
 class PointConvolutionLayer(MessagePassing):
     def __init__(self,
-                 in_channels : int,
-                 out_channels : int,
+                 channels : int,
                  l_filter: int):
         super().__init__(aggr='add')  # "Add" aggregation
 
-        # TODO: Remove this restriction.
-        assert in_channels == out_channels
-
-        self.in_channels_ : int = in_channels
-        self.out_channels_ : int = out_channels
+        self.channels_ : int = channels
         self.l_filter_ : int = l_filter
-        
-        self.channel_map_ = \
-            ChannelMapper(self.in_channels_, self.out_channels_, bias = False)
 
         # Create a list to store MLPs for each output channel to handle learning
         # the radial function for each channel, as a function of the distance
         # between 2 points.
         kNumHiddenLayerNodes = 3
         self.r_mlps = torch.nn.ModuleList([])
-        for channel in range(self.out_channels_):
+        for channel in range(self.channels_):
             channel_list = torch.nn.ModuleList([])
             for l in range(2 * self.l_filter_ + 1):
                 channel_list.append(Sequential(
@@ -47,16 +38,15 @@ class PointConvolutionLayer(MessagePassing):
         self.reset_parameters()
 
     def reset_parameters(self):
-        self.channel_map_.reset_parameters()
-        for mlp_list in self.r_mlps:
-            for mlp in mlp_list:
-                for layer in mlp:
-                    if isinstance(layer, Linear):
-                        layer.reset_parameters()
+        pass
 
     def forward(self, data : Data):
         # x of shape [num_nodes, channel_count, 2l_in + 1, N atoms]
-        x = reshapeInputForPyg(data.x)
+        x = data.x
+        assert x.size()[-3] == self.channels_, \
+            "{0} vs {1}".format(x.size()[-3], self.channels_)
+        
+        x = reshapeInputForPyg(x)
         edge_index = data.edge_index
         assert isinstance(x, SO3partArr)
 
@@ -69,11 +59,6 @@ class PointConvolutionLayer(MessagePassing):
         assert data.point_distances != None
         self.point_distances_ : torch.Tensor = data.point_distances
         assert self.point_distances_.dim() == 2
-        
-        # Map from |in_channels| to |out_channels|.
-        if self.in_channels_ != self.out_channels_:
-            assert False
-            x = self.channel_map_.forward(x)
 
         # Start propagating messages.
         #
@@ -135,11 +120,10 @@ class PointConvolutionLayer(MessagePassing):
     
     def getFilterValue(self, i_arr, j_arr) -> SO3partArr:
         # Get a copy of the spherical harmonics for each channel
-        sh_per_channel = self.getSphericalHarmonicsForFilter(
-            i_arr, j_arr, self.out_channels_)
+        sh_per_channel = self.getSphericalHarmonicsForFilter(i_arr, j_arr)
         
         # Apply the learned radial function to distances between i and j arrays.
-        mlp_vals = self.getRValues(i_arr, j_arr, self.out_channels_)
+        mlp_vals = self.getRValues(i_arr, j_arr)
         assert mlp_vals.dim() == sh_per_channel.dim() and \
                mlp_vals.size()[0:-4] == sh_per_channel.size()[0:-4] and \
                mlp_vals.size()[-2:-1] == sh_per_channel.size()[-2:-1], \
@@ -152,7 +136,7 @@ class PointConvolutionLayer(MessagePassing):
         
         return sh_per_channel
     
-    def getRValues(self, i_arr, j_arr, channel_count):
+    def getRValues(self, i_arr, j_arr):
         # Add an extra dimension so all MLPs can be run in parallel
         distance = self.getDistance(i_arr, j_arr).unsqueeze(-1)
         # temp = torch.stack([mlp(distance) for mlp in self.r_mlps[0]], dim=-1).size()
@@ -175,8 +159,7 @@ class PointConvolutionLayer(MessagePassing):
     # layer.
     # NOTE: Does NOT depend on channel number. In the original TFN paper, this
     # is the Y_m^{(l_f)}(\hat{r}) spherical harmonic for the filter
-    def getSphericalHarmonicsForFilter(
-            self, i_arr, j_arr, channel_count) -> SO3part:
+    def getSphericalHarmonicsForFilter(self, i_arr, j_arr) -> SO3part:
         # Get the vector
         i_pos = self.point_positions_[i_arr]
         j_pos = self.point_positions_[j_arr]
@@ -191,7 +174,7 @@ class PointConvolutionLayer(MessagePassing):
         # Extend in a new dimension by copying once per channel
         # spharm expects (batch_size, 3 (dimensions), N)
         assert vector.size()[-1] == 3
-        vector = vector.unsqueeze(-1).transpose(0, -1)#.repeat(1, 1, channel_count)
+        vector = vector.unsqueeze(-1).transpose(0, -1)
 
         # Return the Spherical Harmonic associated with it
         return SO3partArr.spharm(self.l_filter_, vector)
