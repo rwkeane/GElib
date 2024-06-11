@@ -5,7 +5,8 @@ import warnings
 import torch
 import torch.optim as optim
 
-from src.examples.common.tfn_utils import createGraphData, createOnesTensor
+from src.examples.common.pyg_helper import createGraphData
+from src.examples.tensor_field_networks.tfn_utils import createOnesTensor
 from src.examples.tensor_field_networks.nonlinearity_layer import TfnNonlinearityLayer
 from src.examples.tensor_field_networks.point_convolution_layer import PointConvolutionLayer
 from src.examples.tensor_field_networks.self_interaction_layer import SelfInteractionLayer

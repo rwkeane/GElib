@@ -1,5 +1,7 @@
+import math
 from typing import Tuple, List, Iterable
 import torch
+from torch_geometric.data import Data
 
 from ...gelib import SO3partArr
 
@@ -33,3 +35,41 @@ def undoFlattenForPygPropegate(
     size = list(size)
   size[0] = input.size()[0]
   return input.view(size)
+
+
+
+def createGraphData(positions : torch.Tensor,
+                    values : SO3partArr,
+                    max_dist : float = None) -> Data:
+  # default_values of size |point count| x |channels| x (inner dimensions)
+  assert positions != None
+  assert values != None
+
+  data_point_count = positions.size()[0]
+  distances = torch.cdist(positions, positions)
+  assert distances.dim() == 2
+  # assert values.size()[0] == data_point_count, values.size()
+
+  # Creates a complete graph
+  edge_list = []
+  for i in range(data_point_count):
+    for j in range(data_point_count):
+      if i == j: 
+        continue
+      
+      if (max_dist == None or 
+          math.dist(positions[i], positions[j]) <= max_dist):
+        edge_list.append([i, j])
+
+  edge_index = torch.tensor(edge_list, dtype = torch.int64)
+  data = Data(x = values, edge_index = edge_index.t().contiguous())
+  data.point_distances = distances
+  data.point_positions = positions
+
+  # Don't reshape input for ALL layers, only for the PyG layers which must do it
+  # manually in their forward() call.
+  data.x = reshapeInputForPyg(data.x)
+  data.validate(raise_on_error = True)
+  data.x = undoReshapeInputForPyg(data.x)
+
+  return data
