@@ -4,7 +4,6 @@ from torch.nn import Linear, Module, Parameter, ReLU, Sequential
 from typing import Any, Callable, Generic, List, TypeVar
 from torch_geometric.data import Data
 
-from ...gelib import SO3part
 from ...gelib import SO3partArr
 
 class SelfInteractionLayer(Module):
@@ -27,6 +26,7 @@ class SelfInteractionLayer(Module):
 
     def reset_parameters(self):
         for filter in self.l_filters_:
+            assert isinstance(filter, Linear)
             filter.reset_parameters()
 
     def forward(self, data : Data):
@@ -51,7 +51,6 @@ class SelfInteractionLayer(Module):
         if __debug__:
             expected_new_size = list(x_reshaped.size())
             expected_new_size[-2] = self.out_channels_
-        assert __debug__  # Just to be safe.
         assert list(y_reshaped.size()) == expected_new_size, \
             "{0} vs {1}".format(y_reshaped.size(), expected_new_size)
         

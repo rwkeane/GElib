@@ -7,6 +7,10 @@ from src.examples.common.radial_bessel_mlp import \
     RadialBesselMlp, kDefaultFanSize, kDefaultMlpDepth
 
 class RadialBesselMlpStack(MlpStack):
+    """
+    Simple wrapper around MlpStack to abstract away the use of python
+    functionals. See MlpStack and RadialBesselMlp for more info.
+    """
     def __init__(self,
                  channels : int,
                  l_max : int,

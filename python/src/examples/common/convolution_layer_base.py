@@ -10,6 +10,11 @@ from src.examples.common.pyg_helper import \
         undoReshapeInputForPyg
 
 class ConvolutionLayerBase(MessagePassing, ConvolutionCalculator):
+    """
+    Abstract class for all shared functionality associated with a GNN layer that
+    performs a convolution operation. Based on the Pytorch Geometric
+    MessagePassing primitives.
+    """
     def __init__(self, channels : int, l_filter: int):
         # Calls MessagePassing init() with "Add" aggregation.
         super(MessagePassing, self).__init__(aggr='add')

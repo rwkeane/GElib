@@ -8,6 +8,10 @@ from typing import Any, Callable, Generic, List, TypeVar
 from ...gelib import SO3partArr
 
 class TfnNonlinearityLayer(Module):
+    """
+    Applies an element-wise nonlinearity of type |nonlinearity_fn| to all
+    entries of input tensor.
+    """
     def __init__(
             self,
             channels : int,

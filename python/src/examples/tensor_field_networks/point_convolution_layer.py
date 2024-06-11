@@ -17,7 +17,8 @@ class PointConvolutionLayer(ConvolutionLayerBase):
         kPValue = 6
         kTrainable = False
         self.r_mlps_ = RadialBesselMlpStack(
-            channels, l_filter, kRadialCutoff, kNumBasis, kPValue, kTrainable)
+            channels, l_filter, kRadialCutoff, kNumBasis, kPValue, kTrainable,
+            torch.relu)
 
         self.reset_parameters()
 

@@ -5,6 +5,11 @@ from torch.nn import Linear, Module, ModuleList
 from ...gelib import SO3partArr
 
 class ConvolutionCalculator(Module):
+    """
+    Performs the actual calculations related to a convolution.
+
+    NOTE: The forward() method has an unusal form. 
+    """
     def __init__(self,
                  channels : int,
                  l_filter: int):
@@ -25,6 +30,10 @@ class ConvolutionCalculator(Module):
 
     # Constructs message from node j to node i, which is then aggregated as
     # specified in ctor.
+    #
+    # TODO: Currently, i->j and j->i are calculated separately even though the
+    # value of the CG product is a constant. So this could be updated to be done
+    # once instead.
     def forward(self, x_j : SO3partArr, edge_index : torch.Tensor):
         # x_j represents the "source" nodes, and is of shape
         # [<some_num_nodes>, ..., channel_count, 2l_in + 1, N atoms]

@@ -4,6 +4,10 @@ from torch.nn import Linear, Module, ModuleList, Parameter
 
 TMlpType = TypeVar('TMlpType') 
 class MlpStack(Generic[TMlpType], Module):
+    """
+    A 2D array of MLPs, as created by |mlp_factory|. The input is assumed to
+    have |channels| channels and |l_max| to be the maximum supported l value.
+    """
     def __init__(self,
                  channels : int,
                  l_max : int,

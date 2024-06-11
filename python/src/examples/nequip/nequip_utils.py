@@ -6,7 +6,7 @@ kPositive = 1
 kNegative = 0
 
 def createOnesTensor(l : int, size : int, channels = 1):
-  # 2 is the parities
+  # Index 2 (aka -4) is the parities
   ones = SO3partArr.ones(1, [2, channels], l, size)
   b = ones.size()[0]
   l_out = ones.size()[-2]

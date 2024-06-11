@@ -8,6 +8,10 @@ from src.examples.common.radial_bessel_mlp_stack import RadialBesselMlpStack
 from src.examples.common.convolution_calculator import ConvolutionCalculator
 
 class APart(ConvolutionCalculator):
+    """
+    Represents the A function, as defined in MACE, with |channelse| channels and
+    max l-value |l_filter|.
+    """
     def __init__(self, channels : int, l_filter: int):
         # Initialize ConvolutionCalculator.
         super(ConvolutionCalculator, self).__init__(channels, l_filter)
@@ -23,7 +27,8 @@ class APart(ConvolutionCalculator):
         kPValue = 5
         kTrainable = False
         self.r_mlps_ = RadialBesselMlpStack(
-            channels, l_filter, kRadialCutoff, kNumBasis, kPValue, kTrainable)
+            channels, l_filter, kRadialCutoff, kNumBasis, kPValue, kTrainable,
+            torch.relu)
 
         self.reset_parameters()
 
