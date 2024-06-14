@@ -27,6 +27,8 @@ class RadialBesselMlp(Module):
                  nonlinearity_fn : Callable[[torch.Tensor], torch.Tensor],
                  mlp_depth : int = kDefaultMlpDepth,
                  fan_size : int = kDefaultFanSize):
+        super().__init__()
+
         # Specify if the MLP should use biases.
         # 
         # TODO: This may need to be a ctor parameter?
@@ -36,7 +38,7 @@ class RadialBesselMlp(Module):
         # function.
         layers = [ 
             RadialBesselFunction(num_basis, r_c, p, trainable_embedding) ]
-        layers.append(Linear(fan_size, fan_size, bias = kUseBias))
+        layers.append(Linear(num_basis, fan_size, bias = kUseBias))
 
         # Add additional fully connected layers and nonlinearities based on
         # ctor parameter |mlp_depth|.
@@ -65,10 +67,12 @@ class NonlinearityLayer(Module):
     """
     def __init__(self,
                  nonlinearity_fn : Callable[[torch.Tensor], torch.Tensor]):
+        super().__init__()
+
         assert nonlinearity_fn != None
         self.nonlinearity_ = nonlinearity_fn
 
-    def reset_parameters():
+    def reset_parameters(self):
         pass
 
     def forward(self, x):
@@ -79,6 +83,8 @@ class RadialBesselFunction(Module):
     Calculates the Radial Bessel function, with polynomial cuttoff.
     """
     def __init__(self, num_bases : int, r_c : int, p : float, trainable : bool):
+        super().__init__()
+
         self.r_c_ = r_c
         self.p_ = float(p)
 
@@ -90,7 +96,7 @@ class RadialBesselFunction(Module):
         if trainable:
             self.weights_ = Parameter(weights)
         else:
-            self.register_buffer("weights", weights)
+            self.register_buffer("weights_", weights)
 
         self.reset_parameters()
     

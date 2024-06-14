@@ -22,7 +22,8 @@ class RadialBesselMlpStack(MlpStack):
                  mlp_depth : int = kDefaultMlpDepth,
                  fan_size : int = kDefaultFanSize):
         factory = partial(RadialBesselMlp,
-                          r_c, num_basis,
+                          r_c,
+                          num_basis,
                           p,
                           trainable_embedding,
                           nonlinearity_fn,

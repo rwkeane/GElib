@@ -38,12 +38,11 @@ class TfnNonlinearityLayer(Module):
 
     def forward(self, data : Data):
         # x of shape [batch, channel_count, 2l_in + 1, N atoms]
-        x = data.x
-        assert x.size()[-3] == self.channels_
+        assert data.size()[-3] == self.channels_
 
-        data.x = torch.cat([
-            self.applyZeroNonlinearity(x[...,0,:]).unsqueeze(-2),  # l = 0
-            self.applyNonZeroNonlinearity(x[...,1:,:])  # l > 0
+        data = torch.cat([
+            self.applyZeroNonlinearity(data[...,0,:]).unsqueeze(-2),  # l = 0
+            self.applyNonZeroNonlinearity(data[...,1:,:])  # l > 0
         ], dim = -2)
         return data
     

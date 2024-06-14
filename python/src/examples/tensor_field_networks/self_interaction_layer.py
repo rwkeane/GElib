@@ -29,10 +29,9 @@ class SelfInteractionLayer(Module):
             assert isinstance(filter, Linear)
             filter.reset_parameters()
 
-    def forward(self, data : Data):
+    def forward(self, x : Data):
         # NOTE: this layer assumes -3 is the channel dim, of 4+.
         # x of shape [batch, channel_count, 2l_in + 1, N atoms]
-        x = data.x
         assert isinstance(x, SO3partArr)
         assert x.size()[-3] == self.in_channels_
 
@@ -66,6 +65,4 @@ class SelfInteractionLayer(Module):
         y = y.permute(order)
 
         assert y.size()[-3] == self.out_channels_
-        data.x = y
-
-        return data
+        return y

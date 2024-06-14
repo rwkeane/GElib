@@ -53,3 +53,30 @@ class NequipConvolutionLayer(ConvolutionLayerBase):
                 [ negative_mlp_results, positive_mlp_results ], dim = -4)
 
         return mlp_results
+    
+    def forward(self, data):
+        data = super().forward(data)
+
+        x : torch.Tensor = data.x
+
+        # Get all (i, j pairs)
+        edge_index : torch.Tensor = data.edge_index
+        sources = torch.split(edge_index[0,:], 1, dim = -1)
+
+        # Get the number of neighbors.
+        sources = edge_index[0,:]
+        num_nodes = x.size()[-1]
+        counts = torch.histc(
+            sources, bins = num_nodes, min = 0, max = num_nodes - 1)
+
+        # Divide by sqrt(counts) when counts > 0.
+        counts[counts == 0] = 1
+        counts = torch.sqrt(counts)
+        while counts.dim() < x.dim():
+            counts.unsqueeze(0)
+        counts.expand_as(x)
+
+        # Store the updated values.
+        data.x = x / counts
+
+        return data

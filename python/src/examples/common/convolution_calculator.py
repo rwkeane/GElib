@@ -10,18 +10,14 @@ class ConvolutionCalculator(Module):
 
     NOTE: The forward() method has an unusal form. 
     """
-    def __init__(self,
-                 channels : int,
-                 l_filter: int):
-        super().__init__()
+    def __init__(self, channels : int, l_filter: int, **kwargs):
+        super().__init__(**kwargs)
+
+        assert channels != None
+        assert l_filter != None
 
         self.channels_ : int = channels
         self.l_filter_ : int = l_filter
-
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        pass
     
     @abstractmethod
     def calculateRadialValues(
@@ -63,6 +59,7 @@ class ConvolutionCalculator(Module):
             sh_per_channel.DiagCGproduct(point_representation, self.l_filter_)
         
         assert cg_products.size()[-1] == x_j.size()[-1], cg_products.size()
+        return cg_products
 
     def getPointRepresentation(self, x_j : torch.Tensor) -> torch.Tensor:
         # x_j is [<some_num_nodes>, ..., channel_count, 2l_in + 1, N atoms]

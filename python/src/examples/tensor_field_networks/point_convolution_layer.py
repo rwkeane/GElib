@@ -6,24 +6,27 @@ from src.examples.common.radial_bessel_mlp_stack import RadialBesselMlpStack
 from src.examples.common.convolution_layer_base import ConvolutionLayerBase
 
 class PointConvolutionLayer(ConvolutionLayerBase):
-    def __init__(self,
-                 channels : int,
-                 l_filter: int):
-        super().__init__(channels, l_filter)
-
+    def __init__(self, channels : int, l_filter: int):
+        self.r_mlps_ = None
+        super().__init__(channels = channels, l_filter = l_filter)
+        
         # Use rbmlp to allow better comparison to other models.
         kRadialCutoff = 1.0
         kNumBasis = 8
         kPValue = 6
         kTrainable = False
+
         self.r_mlps_ = RadialBesselMlpStack(
             channels, l_filter, kRadialCutoff, kNumBasis, kPValue, kTrainable,
             torch.relu)
 
         self.reset_parameters()
 
-    def reset_parameters(self):
-        self.r_mlps_.reset_parameters()
+    def reset_parameters(self):   
+        super().reset_parameters()
+
+        if self.r_mlps_ != None:
+            self.r_mlps_.reset_parameters()
     
     def calculateRadialValues(self, point_distances : torch.Tensor):
         # Add an extra dimension so all MLPs can be run in parallel

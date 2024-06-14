@@ -9,24 +9,31 @@ from src.examples.common.pyg_helper import \
     flattenForPygPropegate, undoFlattenForPygPropegate, reshapeInputForPyg, \
         undoReshapeInputForPyg
 
-class ConvolutionLayerBase(MessagePassing, ConvolutionCalculator):
+# TODO: MessageP
+class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
     """
     Abstract class for all shared functionality associated with a GNN layer that
     performs a convolution operation. Based on the Pytorch Geometric
     MessagePassing primitives.
     """
     def __init__(self, channels : int, l_filter: int):
-        # Calls MessagePassing init() with "Add" aggregation.
-        super(MessagePassing, self).__init__(aggr='add')
-
-        # Calls ConvolutionCalculator's init().
-        super(ConvolutionCalculator, self).__init__(channels, l_filter)
+        # Calls both parent class ctors in order of MRO:
+        # 1. ConvolutionCalculator with |channels|, |l_filter|, so these
+        #    parameters are removed from parameter pack.
+        # 2. MessagePassing with "Add" aggregation
+        #
+        # TODO: Initializing torch.nn.Module from ConvolutionCalculator rather
+        # than from MessagePassing doesn't SEEM to have any negative side
+        # effects, but if weirdness happens later this may be why.
+        super().__init__(
+            aggr = 'add', channels = channels, l_filter = l_filter)
 
         self.reset_parameters()
 
     def reset_parameters(self):
-        super(MessagePassing, self).reset_parameters()
+        # TODO: Ensure this works as expected.
         super(ConvolutionCalculator, self).reset_parameters()
+        MessagePassing.reset_parameters(self)
 
     def forward(self, data : Data):
         # x of shape [num_nodes, channel_count, 2l_in + 1, N atoms]
@@ -66,7 +73,7 @@ class ConvolutionLayerBase(MessagePassing, ConvolutionCalculator):
                 original_size : torch.Size):
         assert isinstance(original_size, torch.Size), type(original_size)
 
-        # Hack the batch dimension of the SO3partArr because pyg does not
+        # Hack the batch dimension of the SO3partArr because PyG does not
         # support multidimensional arrays of features, and instead expects that
         # batching is handled internally to the library.
         original_size = list(original_size)
@@ -77,8 +84,8 @@ class ConvolutionLayerBase(MessagePassing, ConvolutionCalculator):
         x_j = undoReshapeInputForPyg(x_j)
 
         # Call into ConvolutionCalculator for the actual calculations.
-        cg_products = \
-            super(ConvolutionCalculator, self).forward(x_j, edge_index)
+        cg_products = ConvolutionCalculator.forward(self, x_j, edge_index)
+        assert cg_products != None
 
         # Convert the result back into the format PyG expects, and return it. At
         # this point, the size should match that at input time, so validate

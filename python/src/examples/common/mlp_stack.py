@@ -11,11 +11,12 @@ class MlpStack(Generic[TMlpType], Module):
     def __init__(self,
                  channels : int,
                  l_max : int,
-                 mlp_factory : Callable[[TMlpType]]):
+                 mlp_factory : Callable[[], TMlpType]):
         assert mlp_factory != None
-        assert isinstance(mlp_factory, Callable[[TMlpType]])
+        assert mlp_factory != None and isinstance(mlp_factory, Callable), \
+            mlp_factory
         
-        super(Module, self).__init__()
+        super().__init__()
 
         mlps = torch.nn.ModuleList([])
         for channel in range(channels):
@@ -26,12 +27,14 @@ class MlpStack(Generic[TMlpType], Module):
         self.mlps_ = mlps
         
     def reset_parameters(self):
-        for layer in self.mlps_:
+        self.reset_stack(self.mlps_)
+
+    def reset_stack(self, stack):
+        for layer in stack:
             if isinstance(layer, torch.nn.ModuleList):
-                self.resetMlpStack(layer)
+                self.reset_stack(layer)
                 continue
 
-            assert isinstance(layer, TMlpType)
             layer.reset_parameters()
     
     def forward(self, x : torch.Tensor):

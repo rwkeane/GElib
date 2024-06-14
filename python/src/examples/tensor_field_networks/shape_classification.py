@@ -10,7 +10,6 @@ from src.examples.tensor_field_networks.tfn_utils import createOnesTensor
 from src.examples.tensor_field_networks.nonlinearity_layer import TfnNonlinearityLayer
 from src.examples.tensor_field_networks.point_convolution_layer import PointConvolutionLayer
 from src.examples.tensor_field_networks.self_interaction_layer import SelfInteractionLayer
-from src.examples.tensor_field_networks.concatenation_layer import ConcatenationLayer
 
 torch.autograd.set_detect_anomaly(True)
 warnings.filterwarnings(action = "ignore", message=".*ATen tensor of dims.*has strides.*")
@@ -48,8 +47,8 @@ class TetrisLayer(torch.nn.Module):
     def __init__(self, in_channels, out_channels, l_value):
         super().__init__()
 
-        self.point_convolution_ = PointConvolutionLayer(in_channels, l_value)
-        self.concat_ = ConcatenationLayer()
+        self.point_convolution_ = PointConvolutionLayer(channels = in_channels,
+                                                        l_filter = l_value)
         self.self_interation_ = \
             SelfInteractionLayer(in_channels, out_channels, l_value)
         self.nonlinearity_ = TfnNonlinearityLayer(out_channels, l_value)
@@ -61,9 +60,8 @@ class TetrisLayer(torch.nn.Module):
 
     def forward(self, input):
         input = self.point_convolution_.forward(input)
-        # input = self.concat_.forward(input.x)
-        input = self.self_interation_.forward(input)
-        input = self.nonlinearity_.forward(input)
+        input.x = self.self_interation_.forward(input.x)
+        input.x = self.nonlinearity_.forward(input.x)
         return input
     
 class TetrisNetwork(torch.nn.Module):
