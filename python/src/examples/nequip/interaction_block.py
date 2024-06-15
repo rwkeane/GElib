@@ -3,8 +3,6 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from ...gelib import SO3partArr
-
 from src.examples.nequip.nequip_utils import kNegative, kPositive
 from src.examples.nequip.nequip_convolution_layer import NequipConvolutionLayer
 from src.examples.tensor_field_networks.self_interaction_layer import \

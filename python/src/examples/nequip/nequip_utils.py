@@ -1,13 +1,13 @@
 import math
 
-from ...gelib import SO3partArr
+from ...gelib import SO3vecArr
 
 kPositive = 1
 kNegative = 0
 
 def createOnesTensor(l : int, size : int, channels = 1):
   # Index 2 (aka -4) is the parities
-  ones = SO3partArr.ones(1, [2, channels], l, size)
+  ones = SO3vecArr.ones(1, [2, channels], l, size)
   b = ones.size()[0]
   l_out = ones.size()[-2]
   n = ones.size()[-1]

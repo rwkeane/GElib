@@ -3,10 +3,10 @@ from typing import Tuple, List, Iterable
 import torch
 from torch_geometric.data import Data
 
-from ...gelib import SO3partArr
+from ...gelib import SO3vecArr
 
-def reshapeInputForPyg(input : SO3partArr) -> SO3partArr:
-  assert isinstance(input, SO3partArr), type(input)
+def reshapeInputForPyg(input : SO3vecArr) -> SO3vecArr:
+  assert isinstance(input, SO3vecArr), type(input)
 
   # input is (batch, channel, 2l + 1, N)
   # Output is (N, batch, channel, 2l + 1)
@@ -14,8 +14,8 @@ def reshapeInputForPyg(input : SO3partArr) -> SO3partArr:
   assert len(order) == input.dim(), "{0} for {1}-dim".format(order, input.dim())
   return input.permute(order).contiguous()
 
-def undoReshapeInputForPyg(input : SO3partArr) -> SO3partArr:
-  assert isinstance(input, SO3partArr), type(input)
+def undoReshapeInputForPyg(input : SO3vecArr) -> SO3vecArr:
+  assert isinstance(input, SO3vecArr), type(input)
 
   # input is (batch, channel, 2l + 1, N)
   # Output is (N, batch, channel, 2l + 1)
@@ -25,51 +25,13 @@ def undoReshapeInputForPyg(input : SO3partArr) -> SO3partArr:
   assert len(order) == input.dim(), "{0} for {1}-dim".format(order, input.dim())
   return input.permute(order).contiguous()
 
-def flattenForPygPropegate(input : SO3partArr) -> Tuple[SO3partArr, Tuple]:
+def flattenForPygPropegate(input : SO3vecArr) -> Tuple[SO3vecArr, Tuple]:
   size = input.size()
   return input.view(size[0], -1), size
 
 def undoFlattenForPygPropegate(
-    input : SO3partArr, size : Iterable) -> SO3partArr:
+    input : SO3vecArr, size : Iterable) -> SO3vecArr:
   if not isinstance(size, List):
     size = list(size)
   size[0] = input.size()[0]
   return input.view(size)
-
-
-
-def createGraphData(positions : torch.Tensor,
-                    values : SO3partArr,
-                    max_dist : float = None) -> Data:
-  # default_values of size |point count| x |channels| x (inner dimensions)
-  assert positions != None
-  assert values != None
-
-  data_point_count = positions.size()[0]
-  distances = torch.cdist(positions, positions)
-  assert distances.dim() == 2
-  # assert values.size()[0] == data_point_count, values.size()
-
-  # Creates a complete graph
-  edge_list = []
-  for i in range(data_point_count):
-    for j in range(data_point_count):
-      if i == j: 
-        continue
-      
-      if (max_dist == None or 
-          math.dist(positions[i], positions[j]) <= max_dist):
-        edge_list.append([i, j])
-
-  edge_index = torch.tensor(edge_list, dtype = torch.int64)
-  data = Data(x = values, edge_index = edge_index.t().contiguous())
-  data.point_distances = distances
-  data.point_positions = positions
-
-  # Don't reshape input for ALL layers, only for the PyG layers which must do it
-  # manually in their forward() call.
-  data.x = reshapeInputForPyg(data.x)
-  data.validate(raise_on_error = True)
-  data.x = undoReshapeInputForPyg(data.x)
-
-  return data

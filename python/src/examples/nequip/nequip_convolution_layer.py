@@ -9,8 +9,10 @@ class NequipConvolutionLayer(ConvolutionLayerBase):
     Represents a convolution layer for the NequIP architecture, with |channels|
     channels, max l-value |l_filter|, and parity |parity|.
     """
-    def __init__(self, channels : int, l_filter : int, parity : int):
-        super().__init__(channels, l_filter)
+    def __init__(
+            self, channels : int, l_filter : int, parity : int, l_max : int):
+        super().__init__(
+            channels = channels, l_filter = l_filter, l_max = l_max)
 
         assert parity == kPositive or parity == kNegative
         self.filter_parity_ = parity

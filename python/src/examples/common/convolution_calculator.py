@@ -4,13 +4,17 @@ from torch.nn import Linear, Module, ModuleList
 
 from ...gelib import SO3partArr
 
-class ConvolutionCalculator(Module):
+from src.examples.common.point_cloud import PointCloud
+
+class ConvolutionCalculator:
     """
     Performs the actual calculations related to a convolution.
 
-    NOTE: The forward() method has an unusal form. 
+    NOTE: All inputs are assumed to have the same l value for a given layer. 
+    Changing this would mainly require updating calculateRadialValues() to be
+    per l_i value.
     """
-    def __init__(self, channels : int, l_filter: int, **kwargs):
+    def __init__(self, channels : int, l_filter: int, l_max : int, **kwargs):
         super().__init__(**kwargs)
 
         assert channels != None
@@ -18,6 +22,7 @@ class ConvolutionCalculator(Module):
 
         self.channels_ : int = channels
         self.l_filter_ : int = l_filter
+        self.l_max_ = l_max
     
     @abstractmethod
     def calculateRadialValues(
@@ -30,11 +35,15 @@ class ConvolutionCalculator(Module):
     # TODO: Currently, i->j and j->i are calculated separately even though the
     # value of the CG product is a constant. So this could be updated to be done
     # once instead.
-    def forward(self, x_j : SO3partArr, edge_index : torch.Tensor):
+    def calculate(self,
+                  x_j : SO3partArr,
+                  edge_index : torch.Tensor,
+                  point_cloud : PointCloud) -> SO3partArr:
         # x_j represents the "source" nodes, and is of shape
         # [<some_num_nodes>, ..., channel_count, 2l_in + 1, N atoms]
         assert isinstance(x_j, SO3partArr)
         assert isinstance(edge_index, torch.Tensor)
+        assert isinstance(point_cloud, PointCloud)
         
         # edge_index has shape [2, |E|].
         i_arr, j_arr = edge_index
@@ -47,7 +56,7 @@ class ConvolutionCalculator(Module):
         assert sh_per_channel.dim() <= x_j.dim()
         while sh_per_channel.dim() < x_j.dim():
             sh_per_channel = sh_per_channel.unsqueeze(0)
-        sh_per_channel = sh_per_channel.expand_as(x_j)
+        sh_per_channel : SO3partArr = sh_per_channel.expand_as(x_j)
 
         # Calculate CG product.
         point_representation = self.getPointRepresentation(x_j)
@@ -55,8 +64,8 @@ class ConvolutionCalculator(Module):
         assert point_representation.size() == x_j.size(), \
             "{0} vs {1}".format(point_representation.size(), x_j.size())
 
-        cg_products : SO3partArr = \
-            sh_per_channel.DiagCGproduct(point_representation, self.l_filter_)
+        cg_products = \
+            sh_per_channel.DiagCGproduct(point_representation, self.l_max_)
         
         assert cg_products.size()[-1] == x_j.size()[-1], cg_products.size()
         return cg_products
@@ -65,12 +74,18 @@ class ConvolutionCalculator(Module):
         # x_j is [<some_num_nodes>, ..., channel_count, 2l_in + 1, N atoms]
         return x_j
     
-    def getFilterValue(self, i_arr, j_arr) -> SO3partArr:
+    def getFilterValue(self,
+                       i_arr : torch.Tensor,
+                       j_arr : torch.Tensor,
+                       point_cloud : PointCloud) -> SO3partArr:
         # Get a copy of the spherical harmonics for each channel
-        sh_per_channel = self.getSphericalHarmonicsForFilter(i_arr, j_arr)
+        sh_per_channel = self.getSphericalHarmonicsForFilter(
+            i_arr, j_arr, point_cloud)
+        assert isinstance(sh_per_channel, SO3partArr)
         
         # Apply the learned radial function to distances between i and j arrays.
-        mlp_vals = self.getRValues(i_arr, j_arr)
+        mlp_vals = self.getRValues(i_arr, j_arr, point_cloud)
+        assert isinstance(mlp_vals, torch.Tensor), type(mlp_vals)
         assert mlp_vals.dim() == sh_per_channel.dim() and \
                mlp_vals.size()[0:-4] == sh_per_channel.size()[0:-4] and \
                mlp_vals.size()[-2:-1] == sh_per_channel.size()[-2:-1], \
@@ -83,8 +98,11 @@ class ConvolutionCalculator(Module):
         
         return sh_per_channel
     
-    def getRValues(self, i_arr, j_arr):
-        distance = self.getDistance(i_arr, j_arr)
+    def getRValues(self,
+                   i_arr : torch.Tensor,
+                   j_arr : torch.Tensor,
+                   point_cloud : PointCloud) -> torch.Tensor:
+        distance = point_cloud.getDistance(i_arr, j_arr)
         radial_values = self.calculateRadialValues(distance)
     
         # Get rid of the extra dimension from MLP application.
@@ -98,11 +116,15 @@ class ConvolutionCalculator(Module):
     # layer.
     # NOTE: Does NOT depend on channel number. In the original TFN paper, this
     # is the Y_m^{(l_f)}(\hat{r}) spherical harmonic for the filter
-    def getSphericalHarmonicsForFilter(self, i_arr, j_arr) -> SO3partArr:
+    def getSphericalHarmonicsForFilter(
+            self,
+            i_arr : torch.Tensor,
+            j_arr : torch.Tensor,
+            point_cloud : PointCloud) -> SO3partArr:
         # Get the vector
-        i_pos = self.point_positions_[i_arr]
-        j_pos = self.point_positions_[j_arr]
-        distance = self.getDistance(i_arr, j_arr)
+        i_pos = point_cloud.positions()[i_arr]
+        j_pos = point_cloud.positions()[j_arr]
+        distance = point_cloud.getDistance(i_arr, j_arr)
         assert len(i_pos) == len(j_pos)
         assert len(i_pos) == len(distance)
 
@@ -115,17 +137,5 @@ class ConvolutionCalculator(Module):
         assert vector.size()[-1] == 3
         vector = vector.unsqueeze(-1).transpose(0, -1)
 
-        # Return the Spherical Harmonic associated with it
+        # Return the Spherical Harmonic associated with it.
         return SO3partArr.spharm(self.l_filter_, vector)
-    
-    def getDistance(self, i, j):
-        if isinstance(i, int):
-            assert isinstance(j, int)
-            return self.point_distances_[i,j]
-        
-        assert i.size() == j.size()
-        if i.dim() == 0:
-            return self.getDistance(i.item(), j.item())
-        
-        return torch.tensor(
-            [self.point_distances_[i[k],j[k]] for k in range(len(i))])

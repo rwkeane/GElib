@@ -9,13 +9,14 @@
 # with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
+from typing import List
 import torch
 from cnine import rtensor as _rtensor
 from cnine import ctensor as _ctensor
 from ..gelib_base import SO3partB_array as _SO3partB_array
 from ..gelib_base import add_conterpolate3dB, add_conterpolate3dB_back
 
-from . import SO3part
+from . import SO3part, SO3vecArr
 
 
 class SO3partArr(torch.Tensor):
@@ -44,7 +45,7 @@ class SO3partArr(torch.Tensor):
 
     
     @staticmethod
-    def zeros(b,_adims,l,n,device='cpu'):
+    def zeros(b : int, _adims : List[int], l : int, n : int, device : str = 'cpu') -> 'SO3partArr':
         """
         Create an SO(3)-part consisting of N*b lots of n vectors transforming according to the l'th irrep of SO(3).
         The vectors are initialized to zero, resulting in an b*(2+l+1)*n dimensional complex tensor of zeros.
@@ -54,7 +55,7 @@ class SO3partArr(torch.Tensor):
         return SO3partArr(torch.zeros([b]+_adims+[2*l+1,n,2],device=device))
     
     @staticmethod
-    def ones(b,_adims,l,n,device='cpu'):
+    def ones(b : int, _adims : List[int], l : int, n : int, device : str = 'cpu') -> 'SO3partArr':
         """
         Create an SO(3)-part consisting of N*b lots of n vectors transforming according to the l'th irrep of SO(3).
         The vectors are initialized to one, resulting in an b*(2+l+1)*n dimensional complex tensor of ones.
@@ -64,7 +65,7 @@ class SO3partArr(torch.Tensor):
         return SO3partArr(torch.ones([b]+_adims+[2*l+1,n,2],device=device))
 
     @staticmethod
-    def randn(b,_adims,l,n,device='cpu'):
+    def randn(b : int, _adims : List[int], l : int, n : int, device : str = 'cpu') -> 'SO3partArr':
         """
         Create an SO(3)-part consisting of N*b lots of n vectors transforming according to the l'th irrep of SO(3).
         The vectors are initialized as random gaussian vectors, resulting in an b*(2+l+1)*n dimensional random
@@ -76,7 +77,7 @@ class SO3partArr(torch.Tensor):
         #return torch.view_as_complex(SO3partArr(torch.randn([b]+_adims+[2*l+1,n,2],device=device)))
 
     @classmethod
-    def spharm(self, l, X, device='cpu'):
+    def spharm(self, l : int, X : torch.Tensor, device : str = 'cpu') -> 'SO3partArr':
         """
         Return the spherical harmonics of the vector (x,y,z)
         """
@@ -86,7 +87,7 @@ class SO3partArr(torch.Tensor):
 
 
     @staticmethod
-    def Fzeros(b,_adims,l,device='cpu'):
+    def Fzeros(b : int, _adims : List[int], l : int, device : str = 'cpu') -> 'SO3partArr':
         """
         Create an SO(3)-part corresponding to the l'th matrix in the Fourier transform of a function on SO(3).
         This gives a N*b*(2+l+1)*(2l+1) dimensional complex tensor. 
@@ -98,7 +99,7 @@ class SO3partArr(torch.Tensor):
 
 
     @staticmethod
-    def Frandn(b,_adims,l,device='cpu'):
+    def Frandn(b : int, _adims : List[int], l : int, device : str = 'cpu') -> 'SO3partArr':
         """
         Create an SO(3)-part corresponding to the l'th matrix in the Fourier transform of a function on SO(3).
         This gives a b*(2+l+1)*(2l+1) dimensional complex random tensor. 
@@ -110,74 +111,79 @@ class SO3partArr(torch.Tensor):
 
 
     @classmethod
-    def zeros_like(self,x):
+    def zeros_like(self, x : 'SO3partArr'):
         return torch.view_as_complex(SO3partArr(torch.zeros_like(torch.view_as_real(x))))
     
     @classmethod
-    def randn_like(self,x):
+    def randn_like(self, x : 'SO3partArr'):
         return SO3partArr(torch.randn_like(torch.view_as_real(x)))
 
 
     ## ---- Access ------------------------------------------------------------------------------------------
 
 
-    def getb(self):
+    def getb(self) -> int:
         return self.size(0)
 
-    def get_adims(self):
+    def get_adims(self) -> List[int]:
         return list(self.size()[1:self.dim()-2])
 
-    def get_nadims(self):
+    def get_nadims(self) -> int:
         return self.dim()-3
 
-    def getl(self):
+    def getl(self) -> int:
         return int((self.size(-2)-1)/2)
 
-    def getn(self):
+    def getn(self) -> int:
         return self.size(-1)
 
 
     ## ---- Operations --------------------------------------------------------------------------------------
 
 
-    def odot(self,y):
+    def odot(self,y) -> int:
             return torch.sum(torch.mul(torch.view_as_real(self),torch.view_as_real(y)))
 
-    def rotate(self,R):
+    def rotate(self,R) -> 'SO3partArr':
         A= _SO3partB_array.view(self).rotate(R).torch()
         return SO3partArr(torch.view_as_real(A))
         #return torch.view_as_complex(SO3partArr(torch.view_as_real(A)))
 
-    def gather(self,_mask):
+    def gather(self,_mask) -> 'SO3partArr':
         """
         Gather the elements of this SO3partArr into a new SO3partArr according to the mask
         """
         return SO3partArr_GatherFn.apply(_mask,self)
 
-    def conterpolate(self,M):
+    def conterpolate(self,M) -> 'SO3partArr':
         return SO3partArr_ConterpolateFn.apply(self,M)
 
-    def conterpolateB(self,M):
+    def conterpolateB(self,M) -> 'SO3partArr':
         return SO3partArr_ConterpolateBFn.apply(self,M)
+    
+    def asVec(self, max_l : int):
+        return SO3vecArr.from_part(self, max_l, self.device)
 
 
     # ---- Products -----------------------------------------------------------------------------------------
 
 
-    def CGproduct(self, y, l):
+    def CGproduct(self, y : 'SO3partArr', l : int) -> 'SO3partArr':
         """
         Compute the l component of the Clesbsch--Gordan product of this SO3partArr with another SO3partArr y.
         """
         assert y != None
+        assert isinstance(y, SO3partArr)
         assert isinstance(l, int)
         return SO3partArr_CGproductFn.apply(self,y,l)
 
 
-    def DiagCGproduct(self, y, l):
+    def DiagCGproduct(self, y : 'SO3partArr', l : int) -> 'SO3partArr':
         """
         Compute the l component of the diagonal Clesbsch--Gordan product of this SO3partArr with another SO3partArr y.
         """
         assert y != None
+        assert isinstance(y, SO3partArr)
         assert isinstance(l, int)
         return SO3partArr_DiagCGproductFn.apply(self,y,l)
 
@@ -292,7 +298,7 @@ class SO3partArr_GatherFn(torch.autograd.Function):
         return r
 
     @staticmethod
-    def backward(ctx,yg):
+    def backward(ctx,yg,*args):
 
         #N=yg.size(0)
         #b=yg.size(1)
@@ -303,7 +309,7 @@ class SO3partArr_GatherFn(torch.autograd.Function):
         r=torch.zeros_like(yg) # change this
 
         # TODO: What is args?
-        _x=_SO3partB_array.view(args)
+        _x=_SO3partB_array.view(*args)
         _r=_SO3partB_array.view(r)
         _r.gather(_x,ctx.mask.inv())
 

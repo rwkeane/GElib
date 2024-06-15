@@ -6,9 +6,10 @@ from src.examples.common.radial_bessel_mlp_stack import RadialBesselMlpStack
 from src.examples.common.convolution_layer_base import ConvolutionLayerBase
 
 class PointConvolutionLayer(ConvolutionLayerBase):
-    def __init__(self, channels : int, l_filter: int):
+    def __init__(self, channels : int, l_filter : int, l_max : int):
         self.r_mlps_ = None
-        super().__init__(channels = channels, l_filter = l_filter)
+        super().__init__(
+            channels = channels, l_filter = l_filter, l_max = l_max)
         
         # Use rbmlp to allow better comparison to other models.
         kRadialCutoff = 1.0

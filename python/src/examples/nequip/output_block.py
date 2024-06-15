@@ -4,7 +4,7 @@ from typing import Optional, Callable
 import torch
 import torch.nn as nn
 
-from ...gelib import SO3partArr
+from ...gelib import SO3vecArr
 
 class NequIPOutputBlock(nn.Module):
     def __init__(self,
@@ -34,8 +34,8 @@ class NequIPOutputBlock(nn.Module):
         self.self_interaction_1_.reset_parameters()
         self.self_interaction_2_.reset_parameters()
 
-    def forward(self, x: SO3partArr):
-        assert isinstance(x, SO3partArr), type(x)
+    def forward(self, x: SO3vecArr):
+        assert isinstance(x, SO3vecArr), type(x)
         assert x.dim() >= 5, x.size()
 
         # Intput x shape: 

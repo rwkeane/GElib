@@ -2,9 +2,10 @@ import math
 import torch
 from torch.nn import Linear, Module, Parameter, ReLU, Sequential
 from typing import Any, Callable, Generic, List, TypeVar
-from torch_geometric.data import Data
 
-from ...gelib import SO3partArr
+from ...gelib import SO3vecArr
+
+from src.examples.common.point_cloud import PointCloud
 
 class SelfInteractionLayer(Module):
     def __init__(self,
@@ -32,7 +33,7 @@ class SelfInteractionLayer(Module):
     def forward(self, x : Data):
         # NOTE: this layer assumes -3 is the channel dim, of 4+.
         # x of shape [batch, channel_count, 2l_in + 1, N atoms]
-        assert isinstance(x, SO3partArr)
+        assert isinstance(x, SO3vecArr)
         assert x.size()[-3] == self.in_channels_
 
         # New order [N atoms, batch, channel, 2l_in + 1]
@@ -42,7 +43,7 @@ class SelfInteractionLayer(Module):
         x_reshaped = permuted.view(-1, permuted_size[-2], permuted_size[-1])
 
         # Sum across channels for each l index (do NOT mix across l vals).
-        y_reshaped = SO3partArr(torch.stack(
+        y_reshaped = SO3vecArr(torch.stack(
             [self.l_filters_[i].forward(x_reshaped[...,i,]) \
                 for i in range(permuted_size[-1])], -1))
         

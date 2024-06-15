@@ -2,7 +2,7 @@ import torch
 from functools import partial
 from torch.nn import Linear, Module, ModuleList
 
-from ...gelib import SO3partArr
+from ...gelib import SO3vecArr
 
 from src.examples.common.radial_bessel_mlp_stack import RadialBesselMlpStack
 from src.examples.common.convolution_calculator import ConvolutionCalculator
@@ -11,6 +11,9 @@ class APart(ConvolutionCalculator):
     """
     Represents the A function, as defined in MACE, with |channelse| channels and
     max l-value |l_filter|.
+
+    TODO: Write a special case for the first layer, where computation is
+    significantly easier.
     """
     def __init__(self, channels : int, l_filter: int):
         # Initialize ConvolutionCalculator.
@@ -41,7 +44,7 @@ class APart(ConvolutionCalculator):
             assert isinstance(module, Linear)
             module.reset_parameters()
 
-    def forward(self, x_j : SO3partArr, edge_index : torch.Tensor):
+    def forward(self, x_j : SO3vecArr, edge_index : torch.Tensor):
         return super().forward(x_j, edge_index)
 
     # ConvolutionCalculate abstract method.

@@ -5,8 +5,6 @@ from torch.nn import Module
 from torch_geometric.data import Data
 from typing import Any, Callable, Generic, List, TypeVar
 
-from ...gelib import SO3partArr
-
 class TfnNonlinearityLayer(Module):
     """
     Applies an element-wise nonlinearity of type |nonlinearity_fn| to all

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from ...gelib import SO3partArr
+from ...gelib import SO3vecArr
 
 class AtomicNumberEmbedding(nn.Module):
     """Embeds atomic numbers into initial scalar features (l = 0)."""
@@ -13,7 +13,7 @@ class AtomicNumberEmbedding(nn.Module):
         self.embedding_ = nn.Embedding(num_embeddings = num_species,
                                       embedding_dim = embedding_dim) 
 
-    def forward(self, atomic_numbers : torch.Tensor) -> SO3partArr:
+    def forward(self, atomic_numbers : torch.Tensor) -> SO3vecArr:
         """Embeds atomic numbers.
 
         Args:
@@ -40,6 +40,6 @@ class AtomicNumberEmbedding(nn.Module):
 
         # Stack with a zero vector for odd parity.
         features = torch.stack(features, torch.zeros(features.size()), dim = -4)
-        features = SO3partArr(features)
+        features = SO3vecArr(features)
         
         return features
