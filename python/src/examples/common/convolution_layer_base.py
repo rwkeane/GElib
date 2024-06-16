@@ -53,22 +53,20 @@ class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
         # NOTE: Hacky dimension thrashing needed to work with PyG.
         x, size = flattenForPygPropegate(x)
         out = self.propagate(edge_index = point_cloud.edge_list(),
-                             x = x,
-                             original_size = size[:],
-                             point_cloud = point_cloud)
+                             x = point_cloud,
+                             original_size = size)
         assert out.dim() == 2 and out.size()[0] == size[0], out.size()
         data.x = undoFlattenForPygPropegate(out, size)
         assert data.x.size() == size, data.x.size()
 
-        return point_cloud.CloneWithNewValue(data)
+        return data
 
     # Constructs message from node j to node i, which is then aggregated as
     # specified in ctor.
     def message(self,
-                x_j : SO3partArr,
+                x_j : PointCloud,
                 edge_index : torch.Tensor,
-                original_size : torch.Size,
-                point_cloud : PointCloud):
+                original_size : torch.Size):
         assert isinstance(original_size, torch.Size), type(original_size)
 
         # Hack the batch dimension of the SO3partArr because PyG does not
@@ -82,8 +80,7 @@ class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
         x_j = undoReshapeInputForPyg(x_j)
 
         # Call into ConvolutionCalculator for the actual calculations.
-        cg_products = ConvolutionCalculator.calculate(
-            self, x_j, edge_index, point_cloud)
+        cg_products = ConvolutionCalculator.calculate(self, x_j, edge_index)
         assert cg_products != None
 
         # Convert the result back into the format PyG expects, and return it. At

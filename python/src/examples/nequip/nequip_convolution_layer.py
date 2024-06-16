@@ -1,5 +1,6 @@
 import torch
 
+from src.examples.common.point_cloud import PointCloud
 from src.examples.common.radial_bessel_mlp_stack import RadialBesselMlpStack
 from src.examples.common.convolution_layer_base import ConvolutionLayerBase
 from src.examples.nequip.nequip_utils import kPositive, kNegative
@@ -59,7 +60,7 @@ class NequipConvolutionLayer(ConvolutionLayerBase):
     def forward(self, data):
         data = super().forward(data)
 
-        x : torch.Tensor = data.x
+        x : PointCloud = data.x
 
         # Get all (i, j pairs)
         edge_index : torch.Tensor = data.edge_index
@@ -76,7 +77,7 @@ class NequipConvolutionLayer(ConvolutionLayerBase):
         counts = torch.sqrt(counts)
         while counts.dim() < x.dim():
             counts.unsqueeze(0)
-        counts.expand_as(x)
+        counts.expand(x.size())
 
         # Store the updated values.
         data.x = x / counts

@@ -1,6 +1,6 @@
 from ctypes import Union
 import math
-from typing import Optional
+from typing import Any, Optional, Sequence
 
 import torch
 from torch_geometric.data import Data as PygData
@@ -15,14 +15,9 @@ from src.examples.codegen.tensor_recurser import TensorRecurser
 class PointCloud(TensorRecurser):
     def __init__(self,
                  positions : torch.Tensor,
-                 values : Union[SO3vecArr, SO3partArr],
-                 max_dist : float = None,
-                 max_l : int = None):
+                 values : SO3vecArr,
+                 max_dist : Optional[float] = None):
       super().__init__()
-
-      if isinstance(values, SO3partArr):
-         assert max_l != None and isinstance(max_l, int)
-         values = values.asVec(max_l)
 
       assert positions != None and isinstance(positions, torch.Tensor), \
           positions
@@ -60,26 +55,6 @@ class PointCloud(TensorRecurser):
     def maxL(self) -> int:
        return self.values_.getLMax()
     
-    def __getitem__(self, l_value) -> SO3partArr: 
-        assert isinstance(l_value, int)
-
-        result = self.values_.parts[l_value]
-
-        if not isinstance(result, SO3partArr):
-           assert isinstance(result, torch.Tensor)
-           result = SO3partArr(result)
-
-        return result
-
-    def __setitem__(self, l_value, data): 
-        assert isinstance(l_value, int)
-
-        if isinstance(data, PygData):
-            data = undoReshapeInputForPyg(data.x)
-        
-        assert isinstance(data, SO3partArr)
-        self.values_.parts[l_value] = data
-    
     def getDistance(self,
                     i : Union[torch.tensor, int],
                     j : Union[torch.tensor, int]):
@@ -106,32 +81,38 @@ class PointCloud(TensorRecurser):
         data.validate(raise_on_error = True)
         return data
     
-    def CGproduct(
-          self, y : 'PointCloud', maxl : Optional[int] = -1) -> 'PointCloud':
-       return self.CloneWithNewValue(self.values_.CGproduct(y.CGproduct, maxl))
+    def CGproduct(self,
+                  y : Union['PointCloud', SO3vecArr],
+                  maxl : Optional[int] = None) -> 'PointCloud':
+        if isinstance(y, PointCloud):
+            y = y.values_
+      
+        assert isinstance(y, SO3vecArr)
+        if maxl == None:
+            maxl = -1
+        return self.CloneWithNewValue(self.values_.CGproduct(y, maxl))
 
-    def ReducingCGproduct(
-          self, y : 'PointCloud', maxl : Optional[int] =-1) -> 'PointCloud':
-       return self.CloneWithNewValue(
-            self.values_.ReducingCGproduct(y.CGproduct, maxl))
+    def ReducingCGproduct(self,
+                          y : Union['PointCloud', SO3vecArr],
+                          maxl : Optional[int] = None) -> 'PointCloud':
+        if isinstance(y, PointCloud):
+            y = y.values_
+        
+        assert isinstance(y, SO3vecArr)
+        if maxl == None:
+            maxl = -1
+        return self.CloneWithNewValue(self.values_.ReducingCGproduct(y, maxl))
 
-    def DiagCGproduct(
-          self, y : 'SO3vecArr', maxl : Optional[int] =-1) -> 'SO3vecArr':
-       return self.CloneWithNewValue(
-            self.values_.DiagCGproduct(y.CGproduct, maxl))
-    
-    def getParts(self):
-       return self.values_.parts
-    
-    def createObject(self, vals):
-        clone = PointCloud.__new__(PointCloud)
-        clone.distances_ = self.distances_
-        clone.edge_index_ = self.edge_index_
-        clone.positions_ = self.positions_
-        clone.values_ = SO3vecArr()
-        clone.values_.parts = vals
-
-        return clone
+    def DiagCGproduct(self,
+                      y : Union['PointCloud', SO3vecArr],
+                      maxl : Optional[int] = None) -> 'PointCloud':
+        if isinstance(y, PointCloud):
+            y = y.values_
+        
+        assert isinstance(y, SO3vecArr)
+        if maxl == None:
+            maxl = -1
+        return self.CloneWithNewValue(self.values_.DiagCGproduct(y, maxl))
 
     @staticmethod
     def CloneWithNewValue(self,
@@ -154,3 +135,134 @@ class PointCloud(TensorRecurser):
         clone.values_ = data
 
         return clone
+    
+    def __getParts(self):
+       return self.values_.parts
+    
+    def __createObject(self, vals):
+        clone = PointCloud.__new__(PointCloud)
+        clone.distances_ = self.distances_
+        clone.edge_index_ = self.edge_index_
+        clone.positions_ = self.positions_
+        clone.values_ = SO3vecArr()
+        clone.values_.parts = vals
+
+        return clone
+
+    # Overrides to simplify python usage.
+    def size(self, *args, **kargs) -> torch.Size:
+        size = super().size(*args, **kargs)
+        return size[0]
+    
+    def dim(self, *args, **kargs) -> int:
+        dim = super().dim(*args, **kargs)
+        return dim[0]
+    
+    def expand_as(self,
+                  other : Union['PointCloud', torch.Tensor],
+                  *args,
+                  **kwargs) -> 'PointCloud':
+        if isinstance(other, PointCloud):
+            assert other.maxL() == self.maxL()
+
+            results = []
+            for i in range(self.maxL() + 1):
+                results.append(self.values_.parts[i].expand_as(
+                    other.values_.parts[i]), *args, **kwargs)
+            return self.CloneWithNewValue(SO3vecArr(results))
+        
+        return self.expand(other.size(), *args, **kwargs)
+    
+    def expand(self,
+               size : Sequence[Union[int, torch.SymInt]],
+               *args,
+               **kwargs) -> 'PointCloud':
+        results = []
+        size = list(size)
+        for i in range(self.maxL() + 1):
+            size[-2] = self.values_.parts[i].size()[-2]
+            results.append(
+                self.values_.parts[i].expand(tuple(size)), *args, **kwargs)
+            
+        return self.CloneWithNewValue(SO3vecArr(results))
+    
+
+
+    # TODO: Add code generation for this special case? Can use suggestion from the AI.
+    
+    def __len__(self):
+        return len(self.values_.parts[0])
+    
+    def __add__(self, other : Any):
+        if isinstance(other, torch.Tensor):
+            return None
+        return super().__add__(other)
+    
+    def __sub__(self, other : Any):
+        pass
+    
+    def __mul__(self, other : Any):
+        pass
+    
+    def __pow__(self, other : Any):
+        pass
+    
+    def __truediv__(self, other : Any):
+        pass
+    
+    def __floordiv__(self, other : Any):
+        pass
+    
+    def __mod__(self, other : Any):
+        pass
+    
+    def __and__(self, other : Any):
+        pass
+    
+    def __or__(self, other : Any):
+        pass
+    
+    def __xor__(self, other : Any):
+        pass
+    
+    def __lt__(self, other : Any):
+        pass
+    
+    def __le__(self, other : Any):
+        pass
+    
+    def __eq__(self, other : Any):
+        pass
+    
+    def __ne__(self, other : Any):
+        pass
+    
+    def __ne__(self, other : Any):
+        pass
+    
+    def __ne__(self, other : Any):
+        pass
+    
+    def __ne__(self, other : Any):
+        pass
+Tensor.__len__
+Tensor.__add__
+Tensor.__call__
+Tensor.__sub__
+Tensor.__mul__
+Tensor.__pow__
+Tensor.__truediv__
+Tensor.__floordiv__
+Tensor.__mod__
+Tensor.__lshift__
+Tensor.__rshift__
+Tensor.__and__
+Tensor.__or__
+Tensor.__xor__
+Tensor.__invert__
+Tensor.__lt__
+Tensor.__le__
+Tensor.__eq__
+Tensor.__ne__
+Tensor.__gt__
+Tensor.__ge__

@@ -6,6 +6,8 @@ from ...gelib import SO3partArr
 
 from src.examples.common.point_cloud import PointCloud
 
+torch.Tensor
+
 class ConvolutionCalculator:
     """
     Performs the actual calculations related to a convolution.
@@ -36,41 +38,41 @@ class ConvolutionCalculator:
     # value of the CG product is a constant. So this could be updated to be done
     # once instead.
     def calculate(self,
-                  x_j : SO3partArr,
-                  edge_index : torch.Tensor,
-                  point_cloud : PointCloud) -> SO3partArr:
+                  x_j : PointCloud,
+                  edge_index : torch.Tensor) -> PointCloud:
         # x_j represents the "source" nodes, and is of shape
         # [<some_num_nodes>, ..., channel_count, 2l_in + 1, N atoms]
-        assert isinstance(x_j, SO3partArr)
+        assert isinstance(x_j, PointCloud)
         assert isinstance(edge_index, torch.Tensor)
-        assert isinstance(point_cloud, PointCloud)
         
         # edge_index has shape [2, |E|].
         i_arr, j_arr = edge_index
 
         # Get the spherical harmonics for each channel.
-        sh_per_channel = self.getFilterValue(i_arr, j_arr)
+        sh_per_channel = self.getFilterValue(i_arr, j_arr, x_j)
         assert isinstance(sh_per_channel, SO3partArr)
         
         # Add dimensions to spherical harmonics to match x_j.
         assert sh_per_channel.dim() <= x_j.dim()
         while sh_per_channel.dim() < x_j.dim():
             sh_per_channel = sh_per_channel.unsqueeze(0)
-        sh_per_channel : SO3partArr = sh_per_channel.expand_as(x_j)
+        new_size = list(sh_per_channel.size())
+        new_size[-2] = sh_per_channel.size()[-2]
+        sh_per_channel : SO3partArr = sh_per_channel.expand(tuple(new_size))
+        sh_per_channel.asVec(self.l_max_)
 
         # Calculate CG product.
-        point_representation = self.getPointRepresentation(x_j)
-        assert isinstance(point_representation, torch.Tensor)
-        assert point_representation.size() == x_j.size(), \
-            "{0} vs {1}".format(point_representation.size(), x_j.size())
+        representation = self.getPointCloudRepresentation(x_j)
+        assert isinstance(representation, PointCloud)
+        assert representation.size()[:-2] == x_j.size()[:-2], \
+            "{0} vs {1}".format(representation.size(), x_j.size())
 
-        cg_products = \
-            sh_per_channel.DiagCGproduct(point_representation, self.l_max_)
+        cg_products = representation.DiagCGproduct(sh_per_channel, self.l_max_)
         
         assert cg_products.size()[-1] == x_j.size()[-1], cg_products.size()
         return cg_products
 
-    def getPointRepresentation(self, x_j : torch.Tensor) -> torch.Tensor:
+    def getPointCloudRepresentation(self, x_j : PointCloud) -> PointCloud:
         # x_j is [<some_num_nodes>, ..., channel_count, 2l_in + 1, N atoms]
         return x_j
     
