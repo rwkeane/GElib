@@ -6,11 +6,14 @@ import torch
 import torch.optim as optim
 
 
-from examples.common.point_cloud_factory import PointCloudFactory
-from .tfn_utils import createOnesTensor
-from .nonlinearity_layer import TfnNonlinearityLayer
-from .point_convolution_layer import PointConvolutionLayer
-from .self_interaction_layer import SelfInteractionLayer
+from src.examples.common.point_cloud_factory import PointCloudFactory
+from src.examples.tensor_field_networks.tfn_utils import createOnesTensor
+from src.examples.tensor_field_networks.nonlinearity_layer import \
+    TfnNonlinearityLayer
+from src.examples.tensor_field_networks.point_convolution_layer import \
+    PointConvolutionLayer
+from src.examples.tensor_field_networks.self_interaction_layer import \
+    SelfInteractionLayer
 
 torch.autograd.set_detect_anomaly(True)
 warnings.filterwarnings(action = "ignore", message=".*ATen tensor of dims.*has strides.*")
@@ -49,7 +52,8 @@ class TetrisLayer(torch.nn.Module):
         super().__init__()
 
         self.point_convolution_ = PointConvolutionLayer(channels = in_channels,
-                                                        l_filter = l_value)
+                                                        l_filter = l_value,
+                                                        l_max = l_value)
         self.self_interation_ = \
             SelfInteractionLayer(in_channels, out_channels, l_value)
         self.nonlinearity_ = TfnNonlinearityLayer(out_channels, l_value)

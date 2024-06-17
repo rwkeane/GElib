@@ -2,11 +2,9 @@ from abc import abstractmethod
 import torch
 from torch.nn import Linear, Module, ModuleList
 
-from gelib import SO3partArr
+from gelib import SO3partArr, SO3vecArr
 
 from src.examples.common.point_cloud import PointCloud
-
-torch.Tensor
 
 class ConvolutionCalculator:
     """
@@ -53,13 +51,14 @@ class ConvolutionCalculator:
         assert isinstance(sh_per_channel, SO3partArr)
         
         # Add dimensions to spherical harmonics to match x_j.
-        assert sh_per_channel.dim() <= x_j.dim()
+        assert sh_per_channel.dim() <= x_j.dim(), \
+            "{0} vs {1}".format(sh_per_channel.dim(), x_j.dim())
         while sh_per_channel.dim() < x_j.dim():
             sh_per_channel = sh_per_channel.unsqueeze(0)
         new_size = list(sh_per_channel.size())
         new_size[-2] = sh_per_channel.size()[-2]
-        sh_per_channel : SO3partArr = sh_per_channel.expand(tuple(new_size))
-        sh_per_channel.asVec(self.l_max_)
+        sh_per_channel = sh_per_channel.expand(tuple(new_size))
+        sh_per_channel = SO3vecArr.from_part(sh_per_channel, self.l_max_)
 
         # Calculate CG product.
         representation = self.getPointCloudRepresentation(x_j)

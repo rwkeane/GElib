@@ -1,17 +1,18 @@
 import math
-from typing import Any, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence, Union
 import torch
 
 from gelib import SO3partArr, SO3vecArr
 
-from examples.codegen.tensor_recurser_client import TensorRecurserClient
-from examples.common.point_cloud import PointCloud
+from src.examples.codegen.tensor_recurser_client import TensorRecurserClient
+from src.examples.common.point_cloud import PointCloud
 
-class PointCloudBase(TensorRecurserClient, PointCloud):
+class PointCloudBase(PointCloud, TensorRecurserClient):
     def __init__(self,
                  positions : torch.Tensor,
                  values : SO3vecArr,
                  max_dist : Optional[float] = None):
+      self._child_type = None
       super().__init__(child_type = PointCloudBase)
 
       assert positions != None and isinstance(positions, torch.Tensor), \
@@ -19,7 +20,10 @@ class PointCloudBase(TensorRecurserClient, PointCloud):
       assert values != None and isinstance(values, SO3vecArr), values
 
       data_point_count = positions.size()[0]
-      assert values.getN() == data_point_count, values
+      if __debug__:
+          tau = values.tau()
+          for t in tau:
+              assert t == data_point_count, values
 
       self.positions_ = positions
       self.values_ = values
@@ -98,45 +102,39 @@ class PointCloudBase(TensorRecurserClient, PointCloud):
         if maxl == None:
             maxl = -1
         return self.CloneWithNewValue(self.values_.DiagCGproduct(y, maxl))
-
-    def CloneWithNewValue(self,
-                          data : Union[SO3partArr, SO3vecArr],
-                          l_value : int = -1) -> PointCloud:
-        assert l_value >= 0 or isinstance(data, SO3vecArr)
-        
-        if isinstance(data, SO3partArr):
-           return self.CloneWithNewValue(data.asVec(), l_value)
-        
-        assert isinstance(data, SO3vecArr)
-
-        # Clone as either a PointCloudImpl or a type that descends from it.
-        clone = self.type.__new__(self.type)
-        assert isinstance(clone, PointCloudBase)
-
-        # Copy all data
-        clone.distances_ = self.distances_
-        clone.edge_index_ = self.edge_index_
-        clone.positions_ = self.positions_
-        clone.values_ = data
-
-        return clone
     
-    def __getParts(self):
+    def _getParts(self):
        return self.values_.parts
     
-    def __createObject(self, vals):
+    def _createObject(self, vals):
         arr = SO3vecArr()
         arr.parts = vals
         return self.CloneWithNewValue(arr)
+    
+    # Similar to PyTorch functions.
+    def allSizes(self, *args, **kwargs):
+        return super().size(*args, **kwargs)
+    
+    def allViews(self, sizes : List, *args, **kwargs):
+        assert isinstance(sizes, list), type(sizes)
+
+        parts = self._getParts()
+        assert len(sizes) == len(parts)
+
+        results = []
+        for i in range(len(sizes)):
+            part : torch.Tensor = parts[i]
+            kwargs["size"] = sizes[i]
+            results.append(part.view(*args, **kwargs))
+
+        return self._createObject(results)
 
     # Overrides to simplify python usage.
-    def size(self, *args, **kargs) -> torch.Size:
-        size = super().size(*args, **kargs)
-        return size[0]
+    def size(self, *args, **kwargs) -> torch.Size:
+        return self.values_.parts[0].size(*args, **kwargs)
     
-    def dim(self, *args, **kargs) -> int:
-        dim = super().dim(*args, **kargs)
-        return dim[0]
+    def dim(self, *args, **kwargs) -> int:
+        return self.values_.parts[0].dim(*args, **kwargs)
     
     def __len__(self):
         return len(self.values_.parts[0])

@@ -3,7 +3,7 @@ import torch
 from torch.nn import Linear, Module, Parameter, ReLU, Sequential
 from typing import Any, Callable, Generic, List, TypeVar
 
-from ...gelib import SO3vecArr
+from gelib import SO3vecArr
 
 from src.examples.common.point_cloud import PointCloud
 

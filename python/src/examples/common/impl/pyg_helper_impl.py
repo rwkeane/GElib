@@ -1,8 +1,8 @@
-import math
 from typing import Tuple, List, Iterable
-import torch
-from torch_geometric.data import Data
 
+from gelib import SO3vecArr
+
+from src.examples.common.impl.point_cloud_base import PointCloudBase
 from src.examples.common.point_cloud import PointCloud
 
 def reshapeInputForPyg(input : PointCloud) -> PointCloud:
@@ -25,14 +25,11 @@ def undoReshapeInputForPyg(input : PointCloud) -> PointCloud:
   assert len(order) == input.dim(), "{0} for {1}-dim".format(order, input.dim())
   return input.permute(order).contiguous()
 
-def flattenForPygPropegate(input : PointCloud) -> Tuple[PointCloud, Tuple]:
-  size = input.size()
-  return input.view(size[0], -1), size
+def flattenForPygPropegate(input : PointCloudBase) -> Tuple[PointCloud, Tuple]:
+  size = input.allSizes()
+  return input.view((size[0])[0], -1), size
 
 def undoFlattenForPygPropegate(
-    input : PointCloud, size : Iterable) -> PointCloud:
-  if not isinstance(size, List):
-    size = list(size)
-  size[0] = input.size()[0]
-  return input.view(size)
+    input : PointCloudBase, size : Iterable) -> PointCloud:
+  return input.allViews(size)
 

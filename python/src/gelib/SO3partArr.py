@@ -16,9 +16,6 @@ from cnine import ctensor as _ctensor
 from gelib_base import SO3partB_array as _SO3partB_array
 from gelib_base import add_conterpolate3dB, add_conterpolate3dB_back
 
-from . import SO3part, SO3vecArr
-
-
 class SO3partArr(torch.Tensor):
     """
     A collection of vectors that transform according to a specific irreducible representation of SO(3).
@@ -160,9 +157,6 @@ class SO3partArr(torch.Tensor):
 
     def conterpolateB(self,M) -> 'SO3partArr':
         return SO3partArr_ConterpolateBFn.apply(self,M)
-    
-    def asVec(self, max_l : int):
-        return SO3vecArr.from_part(self, max_l, self.device)
 
 
     # ---- Products -----------------------------------------------------------------------------------------

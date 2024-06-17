@@ -50,7 +50,7 @@ class SO3vecArr:
         return R
     
     @staticmethod
-    def ones(b : int, _adims : Optional[List[int]], _tau : List[int] ,device='cpu') -> 'SO3vecArr':
+    def ones(b : int, _adims : Optional[List[int]], _tau : List[int], device='cpu') -> 'SO3vecArr':
         "Construct a zero SO3vec object of given type _tau."
         if _adims == None:
             _adims = []
@@ -61,7 +61,7 @@ class SO3vecArr:
         return R
 
     @staticmethod
-    def randn(b : int, _adims : Optional[List[int]], _tau : List[int] ,device='cpu') -> 'SO3vecArr':
+    def randn(b : int, _adims : Optional[List[int]], _tau : List[int], device='cpu') -> 'SO3vecArr':
         "Construct a random SO3vec array of given type _tau."
         if _adims == None:
             _adims = []
@@ -112,7 +112,7 @@ class SO3vecArr:
     def from_part(part : SO3partArr, max_l : int,device='cpu') -> 'SO3vecArr':
         assert isinstance(part, SO3partArr)
         tau = [ 0 for _ in range(max_l + 1)]
-        tau[part.getl()] = part.size()
+        tau[part.getl()] = part.size()[-1]
         result = SO3vecArr.zeros(part.getb(), part.get_adims(), tau, device)
         result.parts[part.getl()] = part
         return result
@@ -140,6 +140,7 @@ class SO3vecArr:
         return t
                        
     def getNarr(self) -> int:
+        # TODO: Should this be different than getN()?
         t=1
         for i in range(1,self.parts[0].dim()-2):
             t*=self.parts[0].size(i)

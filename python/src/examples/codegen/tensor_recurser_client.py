@@ -1,13 +1,13 @@
 from abc import abstractmethod
 
 class TensorRecurserClient:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         pass
     
     @abstractmethod
-    def __getParts(self):
+    def _getParts(self):
         raise NotImplementedError("This method must be implemented!")
     
     @abstractmethod
-    def __createObject(self, vals):
+    def _createObject(self, vals):
         raise NotImplementedError("This method must be implemented!")
