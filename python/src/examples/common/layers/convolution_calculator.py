@@ -1,4 +1,5 @@
-from abc import abstractmethod 
+from abc import abstractmethod
+from enum import Enum 
 import torch
 from torch.nn import Linear, Module, ModuleList
 
@@ -6,7 +7,7 @@ from gelib import SO3partArr, SO3vecArr
 
 from src.examples.common.point_cloud import PointCloud
 
-class ConvolutionCalculator:
+class ConvolutionCalculator(Module):
     """
     Performs the actual calculations related to a convolution.
 
@@ -14,7 +15,11 @@ class ConvolutionCalculator:
     Changing this would mainly require updating calculateRadialValues() to be
     per l_i value.
     """
-    def __init__(self, channels : int, l_filter: int, l_max : int, **kwargs):
+    def __init__(self,
+                 channels : int,
+                 l_filter: int,
+                 l_max : int,
+                 **kwargs):
         super().__init__(**kwargs)
 
         assert channels != None
@@ -35,25 +40,24 @@ class ConvolutionCalculator:
     # TODO: Currently, i->j and j->i are calculated separately even though the
     # value of the CG product is a constant. So this could be updated to be done
     # once instead.
-    def calculate(self,
-                  x_j : PointCloud,
-                  edge_index : torch.Tensor) -> PointCloud:
+    def forward(self, point_cloud : PointCloud) -> PointCloud:
         # x_j represents the "source" nodes, and is of shape
         # [<some_num_nodes>, ..., channel_count, 2l_in + 1, N atoms]
-        assert isinstance(x_j, PointCloud)
-        assert isinstance(edge_index, torch.Tensor)
+        assert isinstance(point_cloud, PointCloud)
         
         # edge_index has shape [2, |E|].
-        i_arr, j_arr = edge_index
+        assert point_cloud.edge_list().size()[0] == 2
+        i_arr = point_cloud.edge_list()[0,:]
+        j_arr = point_cloud.edge_list()[1,:]
 
         # Get the spherical harmonics for each channel.
-        sh_per_channel = self.getFilterValue(i_arr, j_arr, x_j)
+        sh_per_channel = self.getFilterValue(i_arr, j_arr, point_cloud)
         assert isinstance(sh_per_channel, SO3partArr)
         
         # Add dimensions to spherical harmonics to match x_j.
-        assert sh_per_channel.dim() <= x_j.dim(), \
-            "{0} vs {1}".format(sh_per_channel.dim(), x_j.dim())
-        while sh_per_channel.dim() < x_j.dim():
+        assert sh_per_channel.dim() <= point_cloud.dim(), \
+            "{0} vs {1}".format(sh_per_channel.dim(), point_cloud.dim())
+        while sh_per_channel.dim() < point_cloud.dim():
             sh_per_channel = sh_per_channel.unsqueeze(0)
         new_size = list(sh_per_channel.size())
         new_size[-2] = sh_per_channel.size()[-2]
@@ -61,18 +65,19 @@ class ConvolutionCalculator:
         sh_per_channel = SO3vecArr.from_part(sh_per_channel, self.l_max_)
 
         # Calculate CG product.
-        representation = self.getPointCloudRepresentation(x_j)
+        representation = self.getPointCloudRepresentation(point_cloud)
         assert isinstance(representation, PointCloud)
-        assert representation.size()[:-2] == x_j.size()[:-2], \
-            "{0} vs {1}".format(representation.size(), x_j.size())
+        assert representation.size()[:-2] == point_cloud.size()[:-2], \
+            "{0} vs {1}".format(representation.size(), point_cloud.size())
 
-        cg_products = representation.DiagCGproduct(sh_per_channel, self.l_max_)
+        cg_products = representation.CGproduct(sh_per_channel, self.l_max_)
         
-        assert cg_products.size()[-1] == x_j.size()[-1], cg_products.size()
+        assert cg_products.size()[-1] == point_cloud.size()[-1], \
+            "{0} vs {1}".format(cg_products.size(), point_cloud.size())
         return cg_products
 
     def getPointCloudRepresentation(self, x_j : PointCloud) -> PointCloud:
-        # x_j is [<some_num_nodes>, ..., channel_count, 2l_in + 1, N atoms]
+        # x_j is [<some_num_nodes>, ..., channel_count, 2 * l_in + 1, N atoms]
         return x_j
     
     def getFilterValue(self,

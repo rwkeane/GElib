@@ -1,7 +1,7 @@
 import torch
 from torch_geometric.nn import MessagePassing
 
-from src.examples.common.convolution_calculator import ConvolutionCalculator
+from examples.common.layers.convolution_calculator import ConvolutionCalculator
 from src.examples.common.point_cloud import PointCloud
 
 # TODO: MessageP
@@ -34,7 +34,7 @@ class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
         MessagePassing.reset_parameters(self)
 
     def forward(self, point_cloud : PointCloud):
-        assert PointCloud.IsInstance(point_cloud), type(point_cloud)
+        assert isinstance(point_cloud, PointCloud)
 
         # x of shape [num_nodes, channel_count, 2l_in + 1, N atoms]
         point_cloud = point_cloud.ToPygPropegationFormat()
@@ -54,7 +54,7 @@ class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
         x_j = x_j.FromPygPropegationFormat()
 
         # Call into ConvolutionCalculator for the actual calculations.
-        cg_products = self.calculate(x_j, edge_index)
+        cg_products = super().forward(x_j)
         assert cg_products != None and isinstance(cg_products, PointCloud)
 
         # Convert the result back into the format PyG expects, and return it.

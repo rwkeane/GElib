@@ -2,8 +2,8 @@ import torch
 from functools import partial
 from torch.nn import Linear, Module, Parameter, ReLU, Sequential
 
-from src.examples.common.radial_bessel_mlp_stack import RadialBesselMlpStack
-from src.examples.common.convolution_layer_base import ConvolutionLayerBase
+from examples.common.layers.radial_bessel_mlp_stack import RadialBesselMlpStack
+from examples.common.layers.convolution_layer_base import ConvolutionLayerBase
 
 class PointConvolutionLayer(ConvolutionLayerBase):
     def __init__(self, channels : int, l_filter : int, l_max : int):

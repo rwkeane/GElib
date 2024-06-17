@@ -1,12 +1,14 @@
 import torch
 import torch.nn as nn
 
-from ...gelib import SO3vecArr
+from gelib import SO3partArr, SO3vecArr
+
+from src.examples.common.point_cloud_factory import PointCloudFactory
 
 class AtomicNumberEmbedding(nn.Module):
     """Embeds atomic numbers into initial scalar features (l = 0)."""
 
-    def __init__(self, num_species: int, embedding_dim: int):
+    def __init__(self, num_species: int, embedding_dim: int, max_l):
         super().__init__()
 
         self.embedding_dim_ = embedding_dim
@@ -21,7 +23,7 @@ class AtomicNumberEmbedding(nn.Module):
             with atoms containing atomic numbers.
 
         Returns:
-            SO3partArr of shape [B, ..., embedding_dim, 2, 1, 1, N]
+            PointCloud of shape [B, ..., embedding_dim, 2, 1, 1, N]
             (batch, ..., embedding length, parity, channels, l = 0, atoms)
         """
         assert atomic_numbers.dim() >= 2, atomic_numbers.size()
@@ -40,6 +42,11 @@ class AtomicNumberEmbedding(nn.Module):
 
         # Stack with a zero vector for odd parity.
         features = torch.stack(features, torch.zeros(features.size()), dim = -4)
-        features = SO3vecArr(features)
+        features = SO3vecArr.from_part(SO3partArr(features))
+
+        # Throw it all into a point cloud
+        #
+        # TODO: Where do positions come from?
+        point_cloud = PointCloudFactory.CreatePointCloud(positions, features)
         
-        return features
+        return point_cloud

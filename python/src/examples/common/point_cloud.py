@@ -22,9 +22,17 @@ class PointCloud(TensorRecurser):
         raise NotImplementedError("This method must be implemented!")
 
     @abstractmethod
-    def maxL(self) -> int:
+    def max_l(self) -> int:
         """
         Returns the maximum L value of the underlying SO3vecArr.
+        """
+        raise NotImplementedError("This method must be implemented!")
+    
+    def positions(self) -> torch.Tensor:
+        """
+        Returns the underlying point positions.
+
+        TODO: Remove this function to ensure equivariance is maintained.
         """
         raise NotImplementedError("This method must be implemented!")
     
@@ -37,11 +45,19 @@ class PointCloud(TensorRecurser):
         """
         raise NotImplementedError("This method must be implemented!")
     
+    @abstractmethod
+    def getPart(self, l_idx : int) -> SO3partArr:
+        """
+        Returns the part associated with a specific l value |l_idx|.
+        """
+        raise NotImplementedError("This method must be implemented!")
+
+    
     # CG product calculations.
     @abstractmethod
     def CGproduct(self,
                   y : Union['PointCloud', SO3vecArr],
-                  maxl : Optional[int] = None) -> 'PointCloud':
+                  max_l : Optional[int] = None) -> 'PointCloud':
         """
         Calculates the Clebsch-Gordan product of this instance with another
         instance.
@@ -51,7 +67,7 @@ class PointCloud(TensorRecurser):
     @abstractmethod
     def ReducingCGproduct(self,
                           y : Union['PointCloud', SO3vecArr],
-                          maxl : Optional[int] = None) -> 'PointCloud':
+                          max_l : Optional[int] = None) -> 'PointCloud':
         """
         Calculates the Reducing Clebsch-Gordan product of this instance with
         another instance.
@@ -61,7 +77,7 @@ class PointCloud(TensorRecurser):
     @abstractmethod
     def DiagCGproduct(self,
                       y : Union['PointCloud', SO3vecArr],
-                      maxl : Optional[int] = None) -> 'PointCloud':
+                      max_l : Optional[int] = None) -> 'PointCloud':
         """
         Calculates the Diagonal Clebsch-Gordan product of this instance with
         another instance.

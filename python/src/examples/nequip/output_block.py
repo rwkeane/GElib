@@ -4,7 +4,7 @@ from typing import Optional, Callable
 import torch
 import torch.nn as nn
 
-from ...gelib import SO3vecArr
+from src.examples.common.point_cloud import PointCloud
 
 class NequIPOutputBlock(nn.Module):
     def __init__(self,
@@ -34,14 +34,14 @@ class NequIPOutputBlock(nn.Module):
         self.self_interaction_1_.reset_parameters()
         self.self_interaction_2_.reset_parameters()
 
-    def forward(self, x: SO3vecArr):
-        assert isinstance(x, SO3vecArr), type(x)
+    def forward(self, x: PointCloud):
+        assert isinstance(x, PointCloud), type(x)
         assert x.dim() >= 5, x.size()
 
         # Intput x shape: 
         # (batch, ..., embedding length, parity, channels, l, atoms)
         # After: (batch, ..., channels, atoms, l = 0, embedding_length)
-        x = x[...,0,:,0,:].squeeze(-4).transpose(-1, -4)
+        x = x.getPart(0)[...,0,:,0,:].squeeze(-4).transpose(-1, -4)
         
         # Flatten and eliminate the embedding dim.
         previous_size = x.size()

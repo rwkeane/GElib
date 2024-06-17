@@ -269,6 +269,9 @@ class SO3vecArr:
         Compute the full Clesbsch--Gordan product of this SO3vecArr with another SO3vecArr y.
         """
         assert isinstance(y, SO3vecArr)
+        if maxl == None:
+            maxl = -1
+            
         r=SO3vecArr()
         r.parts=list(SO3vecArr_CGproductFn.apply(len(self.parts),len(y.parts),maxl,*(self.parts+y.parts)))
         return r
@@ -280,6 +283,9 @@ class SO3vecArr:
         reducing over extra array dimensions as necesssary.
         """
         assert isinstance(y, SO3vecArr)
+        if maxl == None:
+            maxl = -1
+
         r=SO3vecArr()
         r.parts=list(SO3vecArr_ReducingCGproductFn.apply(len(self.parts),len(y.parts),maxl,*(self.parts+y.parts)))
         return r
@@ -290,6 +296,9 @@ class SO3vecArr:
         Compute the diagonal Clesbsch--Gordan product of this SO3vecArr with another SO3vecArr y.
         """
         assert isinstance(y, SO3vecArr)
+        if maxl == None:
+            maxl = -1
+
         r=SO3vecArr()
         r.parts=list(SO3vecArr_DiagCGproductFn.apply(len(self.parts),len(y.parts),maxl,*(self.parts+y.parts)))
         return r

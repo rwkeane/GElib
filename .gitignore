@@ -16,3 +16,4 @@ python/cnine
 cnine.log
 GElib.log
 CGproducts.csv
+*.txt

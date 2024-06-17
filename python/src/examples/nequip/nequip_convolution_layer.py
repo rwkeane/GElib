@@ -1,8 +1,8 @@
 import torch
 
-from src.examples.common.point_cloud import PointCloudImpl
-from src.examples.common.radial_bessel_mlp_stack import RadialBesselMlpStack
-from src.examples.common.convolution_layer_base import ConvolutionLayerBase
+from src.examples.common.point_cloud import PointCloud
+from examples.common.layers.radial_bessel_mlp_stack import RadialBesselMlpStack
+from examples.common.layers.convolution_layer_base import ConvolutionLayerBase
 from src.examples.nequip.nequip_utils import kPositive, kNegative
 
 class NequipConvolutionLayer(ConvolutionLayerBase):
@@ -57,30 +57,24 @@ class NequipConvolutionLayer(ConvolutionLayerBase):
 
         return mlp_results
     
-    def forward(self, data):
-        assert False, "TODO: Fix this!"
+    def forward(self, data : PointCloud):
         data = super().forward(data)
 
-        x : PointCloudImpl = data.x
-
         # Get all (i, j pairs)
-        edge_index : torch.Tensor = data.edge_index
+        edge_index : torch.Tensor = data.edge_list()
         sources = torch.split(edge_index[0,:], 1, dim = -1)
 
         # Get the number of neighbors.
         sources = edge_index[0,:]
-        num_nodes = x.size()[-1]
+        num_nodes = data.size()[-1]
         counts = torch.histc(
             sources, bins = num_nodes, min = 0, max = num_nodes - 1)
 
         # Divide by sqrt(counts) when counts > 0.
         counts[counts == 0] = 1
         counts = torch.sqrt(counts)
-        while counts.dim() < x.dim():
+        while counts.dim() < data.dim():
             counts.unsqueeze(0)
-        counts.expand(x.size())
+        counts.expand(data.size())
 
-        # Store the updated values.
-        data.x = x / counts
-
-        return data
+        return data / counts

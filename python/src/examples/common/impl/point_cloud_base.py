@@ -51,7 +51,7 @@ class PointCloudBase(PointCloud, TensorRecurserClient):
     def positions(self) -> torch.Tensor:
         return self.positions_
 
-    def maxL(self) -> int:
+    def max_l(self) -> int:
        return self.values_.getLMax()
     
     def getDistance(self,
@@ -70,38 +70,42 @@ class PointCloudBase(PointCloud, TensorRecurserClient):
         return torch.tensor(
             [self.distances_[i[k],j[k]] for k in range(len(i))])
     
+    def getPart(self, l_idx : int) -> SO3partArr:
+        assert l_idx >= 0 and l_idx <= self.max_l()
+        return SO3partArr(self.values_.parts[l_idx])
+    
     def CGproduct(self,
                   y : Union[PointCloud, SO3vecArr],
-                  maxl : Optional[int] = None) -> PointCloud:
+                  max_l : Optional[int] = None) -> PointCloud:
         if isinstance(y, PointCloud):
-            y = y.values()
+            y = y.values_
       
         assert isinstance(y, SO3vecArr)
-        if maxl == None:
-            maxl = -1
-        return self.CloneWithNewValue(self.values_.CGproduct(y, maxl))
+        if max_l == None:
+            max_l = -1
+        return self.CloneWithNewValue(self.values_.CGproduct(y, max_l))
 
     def ReducingCGproduct(self,
                           y : Union[PointCloud, SO3vecArr],
-                          maxl : Optional[int] = None) -> PointCloud:
+                          max_l : Optional[int] = None) -> PointCloud:
         if isinstance(y, PointCloud):
-            y = y.values()
+            y = y.values_
         
         assert isinstance(y, SO3vecArr)
-        if maxl == None:
-            maxl = -1
-        return self.CloneWithNewValue(self.values_.ReducingCGproduct(y, maxl))
+        if max_l == None:
+            max_l = -1
+        return self.CloneWithNewValue(self.values_.ReducingCGproduct(y, max_l))
 
     def DiagCGproduct(self,
                       y : Union[PointCloud, SO3vecArr],
-                      maxl : Optional[int] = None) -> PointCloud:
+                      max_l : Optional[int] = None) -> PointCloud:
         if isinstance(y, PointCloud):
-            y = y.values()
+            y = y.values_
         
         assert isinstance(y, SO3vecArr)
-        if maxl == None:
-            maxl = -1
-        return self.CloneWithNewValue(self.values_.DiagCGproduct(y, maxl))
+        if max_l == None:
+            max_l = -1
+        return self.CloneWithNewValue(self.values_.DiagCGproduct(y, max_l))
     
     def _getParts(self):
        return self.values_.parts

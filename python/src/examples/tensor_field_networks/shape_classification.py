@@ -65,8 +65,8 @@ class TetrisLayer(torch.nn.Module):
 
     def forward(self, input):
         input = self.point_convolution_.forward(input)
-        input.x = self.self_interation_.forward(input.x)
-        input.x = self.nonlinearity_.forward(input.x)
+        input = self.self_interation_.forward(input)
+        input = self.nonlinearity_.forward(input)
         return input
     
 class TetrisNetwork(torch.nn.Module):
