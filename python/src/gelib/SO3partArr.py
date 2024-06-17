@@ -13,8 +13,8 @@ from typing import List
 import torch
 from cnine import rtensor as _rtensor
 from cnine import ctensor as _ctensor
-from ..gelib_base import SO3partB_array as _SO3partB_array
-from ..gelib_base import add_conterpolate3dB, add_conterpolate3dB_back
+from gelib_base import SO3partB_array as _SO3partB_array
+from gelib_base import add_conterpolate3dB, add_conterpolate3dB_back
 
 from . import SO3part, SO3vecArr
 

@@ -9,7 +9,7 @@
 
 import torch
 #from cnine import ctensorb 
-from ..gelib_base import SO3bipartArray as _SO3bipartArr
+from gelib_base import SO3bipartArray as _SO3bipartArr
 
 from . import SO3partArrC as SO3partArrC
 

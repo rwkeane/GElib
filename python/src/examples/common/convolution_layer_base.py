@@ -2,13 +2,10 @@ import torch
 from torch_geometric.data import Data
 from torch_geometric.nn import MessagePassing
 
-from ...gelib import SO3partArr, SO3vecArr
+from gelib import SO3partArr, SO3vecArr
 
 from src.examples.common.convolution_calculator import ConvolutionCalculator
 from src.examples.common.point_cloud import PointCloud
-from src.examples.common.pyg_helper import \
-    flattenForPygPropegate, undoFlattenForPygPropegate, reshapeInputForPyg, \
-        undoReshapeInputForPyg
 
 # TODO: MessageP
 class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
@@ -23,7 +20,7 @@ class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
         #    parameters are removed from parameter pack.
         # 2. MessagePassing with "Add" aggregation
         #
-        # TODO: Initializing torch.nn.Module from ConvolutionCalculator rather
+        # NOTE: Initializing torch.nn.Module from ConvolutionCalculator rather
         # than from MessagePassing doesn't SEEM to have any negative side
         # effects, but if weirdness happens later this may be why.
         super().__init__(aggr = 'add',
@@ -41,25 +38,13 @@ class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
 
     def forward(self, point_cloud : PointCloud):
         assert isinstance(point_cloud, PointCloud)
-        data = point_cloud.asGraphData()
 
         # x of shape [num_nodes, channel_count, 2l_in + 1, N atoms]
-        x = data.x
-        assert x.size()[-3] == self.channels_, \
-            "{0} vs {1}".format(x.size()[-3], self.channels_)
-
-        # Start propagating messages.
-        #
-        # NOTE: Hacky dimension thrashing needed to work with PyG.
-        x, size = flattenForPygPropegate(x)
+        point_cloud = point_cloud.ToPygPropegationFormat()
         out = self.propagate(edge_index = point_cloud.edge_list(),
-                             x = point_cloud,
-                             original_size = size)
-        assert out.dim() == 2 and out.size()[0] == size[0], out.size()
-        data.x = undoFlattenForPygPropegate(out, size)
-        assert data.x.size() == size, data.x.size()
-
-        return data
+                             x = point_cloud)
+        assert isinstance(out, PointCloud)
+        return out.FromPygPropegationFormat()
 
     # Constructs message from node j to node i, which is then aggregated as
     # specified in ctor.
@@ -76,8 +61,7 @@ class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
         assert x_j.dim() == 2, x_j.size()
         input_size = x_j.size()
         original_size[0] = input_size[0]
-        x_j = undoFlattenForPygPropegate(x_j, original_size)
-        x_j = undoReshapeInputForPyg(x_j)
+        x_j = x_j.FromPygPropegationFormat()
 
         # Call into ConvolutionCalculator for the actual calculations.
         cg_products = ConvolutionCalculator.calculate(self, x_j, edge_index)
@@ -86,11 +70,4 @@ class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
         # Convert the result back into the format PyG expects, and return it. At
         # this point, the size should match that at input time, so validate
         # against that too.
-        cg_products = reshapeInputForPyg(cg_products)
-        assert list(cg_products.size()) == original_size, \
-            "{0} vs {1}".format(list(cg_products.size()), original_size)
-        flattened, new_size = flattenForPygPropegate(cg_products)
-        assert flattened.size() == input_size, \
-            "{0} vs {1}".format(flattened.size(), input_size)
-
-        return flattened
+        return cg_products.FromPygPropegationFormat()

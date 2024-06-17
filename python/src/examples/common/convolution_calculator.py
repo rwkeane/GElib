@@ -2,7 +2,7 @@ from abc import abstractmethod
 import torch
 from torch.nn import Linear, Module, ModuleList
 
-from ...gelib import SO3partArr
+from gelib import SO3partArr
 
 from src.examples.common.point_cloud import PointCloud
 

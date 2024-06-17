@@ -1,12 +1,159 @@
-from typing import List
+from typing import List, Tuple
 import re
 import sys
+import inspect
+import torch
 
 """
 This file takes in a list containing all PyTorch operations, and generates a
 base class which can be used in a SFINAE-type style to call all pytorch
 operations for any give class on its instance variables.
 """
+
+def getParameterName(param : inspect.Parameter) -> Tuple[str, bool, bool]:
+  if param.kind == inspect.Parameter.VAR_POSITIONAL:
+    return f"*{param.name}"  # Output: *args
+  elif param.kind == inspect.Parameter.VAR_KEYWORD:
+    return f"**{param.name}"  # Output: **kwargs
+  else:
+      return param.name  # Output: a, b
+  
+def getAnnotation(param : inspect.Parameter, start : str = ":") -> str:
+  if param.annotation == None:
+     return ""
+  if not isinstance(param.annotation, str):
+     return ""
+  
+  a = param.annotation.strip()
+  if a.startswith("'") or a.startswith("\""):
+    assert a.endswith("'") or a.endswith("\""), a
+    a = a[1:-2]
+
+  if a != "":          
+      return " {0} '{1}'".format(start, a)
+  else:
+      return ""
+
+def getVariableInfo(param : inspect.Parameter) -> str:
+   ann = getParameterName(param)
+   return ann[0] + getAnnotation(type, param), ann[1], ann[2]
+
+def getReturnString(parameter : inspect.Parameter):
+  annotations = parameter.__annotations__
+  if not annotations.__contains__("return"):
+      return ""
+   
+  return getAnnotation(annotations["return"], "->")
+
+def getSignature(function):
+  name = function[0]
+  assert isinstance(name, str)
+
+  sig = inspect.signature(function)
+  vals = sig.parameters.values()
+  
+  return_annotation = getAnnotation(sig.return_annotation, "->")
+  parameters = ""
+  for val in vals:
+    if parameters != "":
+      assert call == ""
+      parameters += ", "
+      call += ", "
+    param, args, kwargs = getVariableInfo(val)
+
+    parameters += param
+
+  return "  def {0}({1}){2}:\n".format(name, parameters, return_annotation)
+  
+def processParam(var_name : str, kwargs_name : str):
+  return """
+    assert not kwargs_name,__contains__(var_name)
+    {1}['{0}'] = {0}
+""".format(var_name, kwargs_name)
+
+def getFunctionStart(function):
+  result = getSignature(function) + "\n"
+  
+  sig = inspect.signature(function)
+  vals = sig.parameters.values()
+  
+  kwargs_name = ""
+  for val in vals:
+    param, args, kwargs = getVariableInfo(val)
+    if kwargs:
+      assert kwargs_name == ""
+      kwargs_name = param[2:]
+
+  if kwargs_name == "":
+    kwargs_name = "kwargs"
+
+  for val in vals:
+    param, args, kwargs = getVariableInfo(val)
+    if args or kwargs:
+       continue
+    
+    result += processParam(param, kwargs_name)
+
+def getFunctionCall(function):
+  sig = inspect.signature(function)
+  vals = sig.parameters.values()
+  
+  kwargs_name = ""
+  for val in vals:
+    param, args, kwargs = getVariableInfo(val)
+    if kwargs:
+      assert kwargs_name == ""
+      kwargs_name = param[2:]
+
+  name = function[0]
+  call = """
+    results = []
+    parts = self.__getParts()
+
+    # Calculate the result for each individual part.
+    for i in range(len(parts)):
+      part = parts[i]
+
+      # Modify all |args| that are PointCloud instances to just be the
+      # specific part we care about.
+      part_args = list(args)
+      for i, arg in enumerate(args):
+        if isinstance(arg, self.__child_type):
+          part_args[i] = arg.__getParts()[i]
+        elif isinstance(arg, torch.Tensor):
+          assert arg.size()[-2] == 1
+          new_size = list(arg.size())
+          new_size[-2] = part.size()[-2]
+          part_args[i] = arg.expand(tuple(new_size))
+
+      # Do the same for |{1}|.
+      part_{1} = {1}.copy()
+      for key, value in {1}.items():
+        if isinstance(value, self.__child_type):
+          part_{1}[key] = value.__getParts()[i]
+        elif isinstance(value, torch.Tensor):
+          assert value.size()[-2] == 1
+          new_size = list(value.size())
+          new_size[-2] = part.size()[-2]
+          part_{1}[key] = arg.expand(tuple(new_size))
+
+      # Call the underlying function with modifies parameters.
+      results.append(part.{0}(*part_args, **part_{1}))
+
+    # Turn it into an object and return it
+    return self.__createObject(results)
+  """
+  return call.format(name, kwargs_name)
+
+def writeFunction(file, function):
+  string = getFunctionStart(function) + getFunctionCall(function)
+  file.write(string)
+      
+def processMembers(file, type):
+   members = inspect.getmembers(type,
+                                predicate = inspect.isfunction)
+   for member in members:
+      writeFunction(file, member)
 
 def getData(file : str, prefix = "Tensor") -> List[str]:
   Lines = file.readlines()
@@ -30,51 +177,52 @@ def getData(file : str, prefix = "Tensor") -> List[str]:
 
   return functions
 
-def writeFunction(f, function_name : str):
+def writeFunction(file, function_name : str, kwargs_name : str = "kwargs"):
   function = """
-    def {0}(self, *args, **kwargs):
-      results = []
-      parts = self.__getParts()
+  def {0}(self, *args, **kwargs):
+    results = []
+    parts = self.__getParts()
 
-      # Calculate the result for each individual part.
-      for i in range(len(parts)):
-        part = parts[i]
+    # Calculate the result for each individual part.
+    for i in range(len(parts)):
+      part = parts[i]
 
-        # Modify all |args| that are PointCloud instances to just be the
-        # specific part we care about.
-        part_args = list(args)
-        for i, arg in enumerate(args):
-          if isinstance(arg, self.__child_type):
-            part_args[i] = arg.__getParts()[i]
-          elif isinstance(arg, torch.Tensor):
-            assert arg.size()[-2] == 1
-            new_size = list(arg.size())
-            new_size[-2] = part.size()[-2]
-            part_args[i] = arg.expand(tuple(new_size))
+      # Modify all |args| that are PointCloud instances to just be the
+      # specific part we care about.
+      part_args = list(args)
+      for i, arg in enumerate(args):
+        if isinstance(arg, self.__child_type):
+          part_args[i] = arg.__getParts()[i]
+        elif isinstance(arg, torch.Tensor):
+          assert arg.size()[-2] == 1
+          new_size = list(arg.size())
+          new_size[-2] = part.size()[-2]
+          part_args[i] = arg.expand(tuple(new_size))
 
-        # Do the same for |kwargs|.
-        part_kwargs = kwargs.copy()
-        for key, value in kwargs.items():
-          if isinstance(value, self.__child_type):
-            part_kwargs[key] = value.__getParts()[i]
-          elif isinstance(value, torch.Tensor):
-            assert value.size()[-2] == 1
-            new_size = list(value.size())
-            new_size[-2] = part.size()[-2]
-            part_kwargs[key] = arg.expand(tuple(new_size))
+      # Do the same for |{1}|.
+      part_{1} = {1}.copy()
+      for key, value in {1}.items():
+        if isinstance(value, self.__child_type):
+          part_{1}[key] = value.__getParts()[i]
+        elif isinstance(value, torch.Tensor):
+          assert value.size()[-2] == 1
+          new_size = list(value.size())
+          new_size[-2] = part.size()[-2]
+          part_{1}[key] = arg.expand(tuple(new_size))
 
-        # Call the underlying function with modifies parameters.
-        results.append(part.{0}(*part_args, **part_kwargs))
+      # Call the underlying function with modifies parameters.
+      results.append(part.{0}(*part_args, **part_{1}))
 
-      # Turn it into an object and return it
-      return self.__createObject(results)
+    # Turn it into an object and return it
+    return self.__createObject(results)
   """
-  f.write(function.format(function_name))
+  file.write(function.format(function_name, kwargs_name))
 
 def writeHeader(f):
   str = """from typing import List
-
 import torch
+
+from .tensor_recurser_client import TensorRecurserClient
 
 class TensorRecurser:
   \"""
@@ -87,7 +235,7 @@ class TensorRecurser:
    as they won't persist.
   \"""
 
-  def __init__(self, child_type, *args, **kwargs):
+  def __init__(self, child_type = TensorRecurserClient, *args, **kwargs):
     \"""
     |child_type| is the type of the child that extends this parent, to allow
     this class to act in a SFINAE manner.
@@ -115,3 +263,18 @@ if __name__=="__main__":
     writeHeader(dest)
     for func in functions:
        writeFunction(dest, func)
+
+# if __name__=="__main__": 
+#     command_args = sys.argv
+#     assert len(command_args) == 3, len(command_args)
+
+#     source = command_args[1]
+#     dest = command_args[2]
+
+#     print("Source:", source, " Dest:", dest)
+
+#     source = open(source, "r")
+#     dest = open(dest, "x")  # TODO: w not x
+
+#     writeHeader(dest)
+#     processMembers(dest, torch.Tensor)

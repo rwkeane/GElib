@@ -1,10 +1,9 @@
 # WE SHOULD REMOVE THE import *  !!!
 import torch
-from .. import gelib_base
 
-from ..gelib_base import SO3element 
-from ..gelib_base import SO3type 
-from ..gelib_base import SO3bitype 
+from gelib_base import SO3element 
+from gelib_base import SO3type 
+from gelib_base import SO3bitype 
 
 from .SO3part import *
 from .SO3weights import *

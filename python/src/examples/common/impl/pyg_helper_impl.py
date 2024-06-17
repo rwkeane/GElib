@@ -35,3 +35,4 @@ def undoFlattenForPygPropegate(
     size = list(size)
   size[0] = input.size()[0]
   return input.view(size)
+

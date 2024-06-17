@@ -30,15 +30,15 @@ class SelfInteractionLayer(Module):
             assert isinstance(filter, Linear)
             filter.reset_parameters()
 
-    def forward(self, x : Data):
+    def forward(self, x : PointCloud):
         # NOTE: this layer assumes -3 is the channel dim, of 4+.
         # x of shape [batch, channel_count, 2l_in + 1, N atoms]
-        assert isinstance(x, SO3vecArr)
+        assert isinstance(x, PointCloud)
         assert x.size()[-3] == self.in_channels_
 
         # New order [N atoms, batch, channel, 2l_in + 1]
         order = list(range(-1, x.dim() - 1, 1))
-        permuted = x.permute(order)
+        permuted : PointCloud = x.permute(order)
         permuted_size = permuted.size()
         x_reshaped = permuted.view(-1, permuted_size[-2], permuted_size[-1])
 
@@ -46,18 +46,19 @@ class SelfInteractionLayer(Module):
         y_reshaped = SO3vecArr(torch.stack(
             [self.l_filters_[i].forward(x_reshaped[...,i,]) \
                 for i in range(permuted_size[-1])], -1))
+        y_reshaped = x.CloneWithNewValue(y_reshaped)
         
         # Validate it worked.
         if __debug__:
             expected_new_size = list(x_reshaped.size())
             expected_new_size[-2] = self.out_channels_
-        assert list(y_reshaped.size()) == expected_new_size, \
-            "{0} vs {1}".format(y_reshaped.size(), expected_new_size)
+            assert list(y_reshaped.size()) == expected_new_size, \
+                "{0} vs {1}".format(y_reshaped.size(), expected_new_size)
         
         # Undo the reshaping.
         new_size = list(permuted.size())
         new_size[-2] = self.out_channels_
-        y = y_reshaped.view(new_size)
+        y : PointCloud = y_reshaped.view(new_size)
 
         # Undo re-ordering.
         order = list(range(1, y.dim(), 1))

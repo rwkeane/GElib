@@ -10,7 +10,7 @@
 import torch
 
 from cnine import rtensor 
-from ..gelib_base import add_CGtensor_to, add_CGmatrix_to
+from gelib_base import add_CGtensor_to, add_CGmatrix_to
 
 def SO3CGtensor(l1,l2,l):
     r=torch.zeros(2*l1+1,2*l2+1,2*l+1)
