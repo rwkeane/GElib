@@ -6,8 +6,9 @@ from torch.nn import Linear, Module, ModuleList
 from gelib import SO3partArr, SO3vecArr
 
 from src.examples.common.point_cloud import PointCloud
+from src.examples.common.impl.internal_caller import InternalCaller
 
-class ConvolutionCalculator(Module):
+class ConvolutionCalculator(InternalCaller, Module):
     """
     Performs the actual calculations related to a convolution.
 
@@ -33,6 +34,9 @@ class ConvolutionCalculator(Module):
     def calculateRadialValues(
             self, point_distances : torch.Tensor) -> torch.Tensor:
         raise NotImplementedError("This method must be implemented!")
+    
+    def reset_parameters(self):
+        pass
 
     # Constructs message from node j to node i, which is then aggregated as
     # specified in ctor.
@@ -72,8 +76,8 @@ class ConvolutionCalculator(Module):
 
         cg_products = representation.CGproduct(sh_per_channel, self.l_max_)
         
-        assert cg_products.size()[-1] == point_cloud.size()[-1], \
-            "{0} vs {1}".format(cg_products.size(), point_cloud.size())
+        # assert cg_products.size()[-1] == point_cloud.size()[-1], \
+        #     "{0} vs {1}".format(cg_products.size(), point_cloud.size())
         return cg_products
 
     def getPointCloudRepresentation(self, x_j : PointCloud) -> PointCloud:

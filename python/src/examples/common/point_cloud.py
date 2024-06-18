@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import math
-from typing import Any, List, Optional, Sequence, Union
+from typing import  List, Optional, Sequence, Union
 
 import torch
 from torch_geometric.data import Data as PygData
@@ -134,4 +134,3 @@ class PointCloud(TensorRecurser):
         Any additional parameters are passed to all view() calls.
         """
         raise NotImplementedError("This method must be implemented!")
-  

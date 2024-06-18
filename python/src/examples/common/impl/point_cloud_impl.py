@@ -16,15 +16,8 @@ class PointCloudImpl(PointCloudBase):
 
     @staticmethod
     def ClonePointCloudImpl(instance : PointCloudBase) -> 'PointCloudImpl':
-        # NOTE: Do NOT call super(), because that will be overridded by the
-        # other implementation in PygPointCloud, so instead manually copy the
-        # code here. Quack Quack....
         clone = PointCloudImpl.__new__(PointCloudImpl)
-        clone.distances_ = instance.distances_
-        clone.edge_index_ = instance.edge_index_
-        clone.positions_ = instance.positions_
-        clone.values_ = instance.values_
-        clone._child_type = instance._child_type
+        PointCloudBase.CopyAllDataTo(instance, clone)
 
         return clone
 
@@ -41,7 +34,7 @@ class PointCloudImpl(PointCloudBase):
         assert l_value >= 0 or isinstance(data, SO3vecArr)
         
         if isinstance(data, SO3partArr):
-           data = data.asVec(l_value)
+           data = SO3vecArr.from_part(data, l_value)
         
         assert isinstance(data, SO3vecArr)
 
@@ -50,10 +43,7 @@ class PointCloudImpl(PointCloudBase):
         assert isinstance(clone, PointCloudImpl)
 
         # Copy all data
-        clone.distances_ = self.distances_
-        clone.edge_index_ = self.edge_index_
-        clone.positions_ = self.positions_
-        clone._child_type = self._child_type
+        PointCloudBase.CopyAllDataTo(self, clone)
         clone.values_ = data
 
         return clone

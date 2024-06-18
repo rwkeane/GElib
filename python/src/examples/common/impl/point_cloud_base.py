@@ -5,14 +5,16 @@ import torch
 from gelib import SO3partArr, SO3vecArr
 
 from src.examples.codegen.tensor_recurser_client import TensorRecurserClient
+from examples.common.impl.internal_caller import InternalType
 from src.examples.common.point_cloud import PointCloud
 
-class PointCloudBase(PointCloud, TensorRecurserClient):
+class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
     def __init__(self,
                  positions : torch.Tensor,
                  values : SO3vecArr,
                  max_dist : Optional[float] = None):
       self._child_type = None
+
       super().__init__(child_type = PointCloudBase)
 
       assert positions != None and isinstance(positions, torch.Tensor), \
@@ -107,13 +109,25 @@ class PointCloudBase(PointCloud, TensorRecurserClient):
             max_l = -1
         return self.CloneWithNewValue(self.values_.DiagCGproduct(y, max_l))
     
-    def _getParts(self):
-       return self.values_.parts
+    def _getVec(self):
+       return self.values_
     
     def _createObject(self, vals):
         arr = SO3vecArr()
         arr.parts = vals
         return self.CloneWithNewValue(arr)
+    
+    @staticmethod
+    def CopyAllDataTo(original : 'PointCloudBase',
+                      clone : 'PointCloudBase') -> None:
+        assert isinstance(clone, PointCloudBase)
+        clone.distances_ = original.distances_
+        clone.edge_index_ = original.edge_index_
+        clone.positions_ = original.positions_
+        clone.values_ = original.values_
+        InternalType.__init__(clone)
+        
+        original.addChild(clone)
     
     # Similar to PyTorch functions.
     def allSizes(self, *args, **kwargs):
@@ -142,3 +156,14 @@ class PointCloudBase(PointCloud, TensorRecurserClient):
     
     def __len__(self):
         return len(self.values_.parts[0])
+    
+    def expand_as(self, other):
+        assert isinstance(other, PointCloud)
+        assert len(self.values_.parts) == len(other.values_.parts)
+
+        results = []
+        for i in range(len(self.values_.parts)):
+            results.append(self.values_.parts[i].expand_as(
+                other.values_.parts[i]))
+        
+        return self.CloneWithNewValue(SO3partArr(results))

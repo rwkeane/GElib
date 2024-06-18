@@ -11,7 +11,7 @@ from src.examples.common.impl.pyg_helper_impl import \
 class PygPointCloud(PointCloudBase):
     def __init__(self):
         # Define attributes just for the code hints.
-        self.original_size_ = None
+        self.source_size_ = None
         self.original_clone_func_ = None
 
         raise NotImplementedError("Must be created with __new__()!")
@@ -27,13 +27,9 @@ class PygPointCloud(PointCloudBase):
         assert isinstance(copy, PointCloudBase), type(copy)
 
         clone = PygPointCloud.__new__(PygPointCloud)
-        clone.distances_ = copy.distances_
-        clone.edge_index_ = copy.edge_index_
-        clone.positions_ = copy.positions_
-        clone.values_ = copy.values_
-        clone._child_type = copy._child_type
-        clone.original_size_ = size
+        PointCloudBase.CopyAllDataTo(copy, clone)
         clone.original_clone_func_ = clone_func
+        clone.source_size_ = None
 
         return clone
 
@@ -63,12 +59,9 @@ class PygPointCloud(PointCloudBase):
         assert isinstance(clone, PygPointCloud)
 
         # Copy all data
-        clone.distances_ = self.distances_
-        clone.edge_index_ = self.edge_index_
-        clone.positions_ = self.positions_
+        PointCloudBase.CopyAllDataTo(self, clone)
         clone.values_ = data
-        clone.original_size_ = self.original_size_
         clone.original_clone_func_ = self.original_clone_func_
-        clone._child_type = self._child_type
+        clone.source_size_ = self.source_size_
 
         return clone

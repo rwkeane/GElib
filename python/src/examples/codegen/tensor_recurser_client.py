@@ -5,7 +5,7 @@ class TensorRecurserClient:
         pass
     
     @abstractmethod
-    def _getParts(self):
+    def _getVec(self):
         raise NotImplementedError("This method must be implemented!")
     
     @abstractmethod
