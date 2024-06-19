@@ -41,7 +41,7 @@ class NequIPOutputBlock(nn.Module):
         # Intput x shape: 
         # (batch, ..., embedding length, parity, channels, l, atoms)
         # After: (batch, ..., channels, atoms, l = 0, embedding_length)
-        x = x.getPart(0)[...,0,:,0,:].squeeze(-4).transpose(-1, -4)
+        x = x.part(0)[...,0,:,0,:].squeeze(-4).transpose(-1, -4)
         
         # Flatten and eliminate the embedding dim.
         previous_size = x.size()

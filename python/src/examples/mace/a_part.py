@@ -4,7 +4,7 @@ from torch.nn import Linear, Module, ModuleList
 
 from ...gelib import SO3vecArr
 
-from examples.common.layers.radial_bessel_mlp_stack import RadialBesselMlpStack
+from examples.common.util.radial_bessel_mlp_stack import RadialBesselMlpStack
 from examples.common.layers.convolution_calculator import ConvolutionCalculator
 
 class APart(ConvolutionCalculator):

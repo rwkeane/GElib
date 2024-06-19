@@ -3,8 +3,7 @@ import torch
 
 from src.examples.common.layers.convolution_calculator import \
     ConvolutionCalculator
-from src.examples.common.layers.message_passing import MessagePassing
-from src.examples.common.impl.point_cloud_aggregator import PointCloudAggregator
+from examples.common.util.message_passing import MessagePassing
 from src.examples.common.point_cloud import PointCloud
 
 class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):

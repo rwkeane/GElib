@@ -1,7 +1,7 @@
 import torch
 
 from src.examples.common.point_cloud import PointCloud
-from examples.common.layers.radial_bessel_mlp_stack import RadialBesselMlpStack
+from examples.common.util.radial_bessel_mlp_stack import RadialBesselMlpStack
 from examples.common.layers.convolution_layer_base import ConvolutionLayerBase
 from src.examples.nequip.nequip_utils import kPositive, kNegative
 

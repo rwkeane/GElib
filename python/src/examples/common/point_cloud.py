@@ -1,9 +1,7 @@
 from abc import abstractmethod
-import math
 from typing import  List, Optional, Sequence, Union
 
 import torch
-from torch_geometric.data import Data as PygData
 
 from gelib import SO3partArr, SO3vecArr
 
@@ -28,31 +26,38 @@ class PointCloud(TensorRecurser):
         """
         raise NotImplementedError("This method must be implemented!")
     
-    def positions(self) -> torch.Tensor:
+    @abstractmethod
+    def data(self) -> SO3vecArr:
         """
-        Returns the underlying point positions.
-
-        TODO: Remove this function to ensure equivariance is maintained.
+        Returns the SO3vecArr backing this instance.
+        """
+        raise NotImplementedError("This method must be implemented!")
+    
+    @abstractmethod
+    def part(self, l_idx : int) -> SO3partArr:
+        """
+        Returns the part associated with a specific l value |l_idx|.
         """
         raise NotImplementedError("This method must be implemented!")
     
     @abstractmethod
     def getDistance(self,
                     i : Union[torch.tensor, int],
-                    j : Union[torch.tensor, int]):
+                    j : Union[torch.tensor, int]) -> torch.Tensor:
         """
         Returns the distance between |i| and |j|.
         """
         raise NotImplementedError("This method must be implemented!")
     
     @abstractmethod
-    def getPart(self, l_idx : int) -> SO3partArr:
+    def getVectors(self,
+                   i : Union[torch.tensor, int],
+                   j : Union[torch.tensor, int]) -> torch.Tensor:
         """
-        Returns the part associated with a specific l value |l_idx|.
+        Returns the vector pointing from i to j.
         """
         raise NotImplementedError("This method must be implemented!")
 
-    
     # CG product calculations.
     @abstractmethod
     def CGproduct(self,
@@ -87,29 +92,12 @@ class PointCloud(TensorRecurser):
     # Wrappers used for supporting PyTorch-like functionality.
     @abstractmethod
     def CloneWithNewValue(self,
-                          data : Union[PygData, SO3partArr, SO3vecArr],
+                          data : Union[SO3partArr, SO3vecArr],
                           l_value : int = -1) -> 'PointCloud':
         """
         Creates a clone of this oject with the new value |data|. If |data| is
         an SO3partArr, it is converted to an SO3vecArr with maximum l value 
         |l_value|.
-        """
-        raise NotImplementedError("This method must be implemented!")
-
-    # PyTorch Geometric support.
-    @abstractmethod
-    def ToPygPropegationFormat(self) -> 'PointCloud':
-        """
-        Returns a new view of this object which is formatted as expected for
-        Pytorch Geometric.
-        """
-        raise NotImplementedError("This method must be implemented!")
-
-    @abstractmethod
-    def FromPygPropegationFormat(self) -> 'PointCloud':
-        """
-        Converts back from the Pytorch Geometric Specific format to that
-        expected by the other parts of the codebase.
         """
         raise NotImplementedError("This method must be implemented!")
 
@@ -121,16 +109,5 @@ class PointCloud(TensorRecurser):
         Returns a list containing the result of torch.Tensor.size() when called
         on each part of the underlying SO3vecArr. Any additional parameters are
         passed to all size() calls.
-        """
-        raise NotImplementedError("This method must be implemented!")
-    
-    @abstractmethod
-    def allViews(self, sizes : List[Sequence[int | torch.SymInt]],
-                 *args,
-                 **kwargs) -> 'PointCloud':
-        """
-        Returns a PointCloud with entries representing where torch.Tensor.view()
-        is called on the underlying part i with the size stored in |sizes[i]|.
-        Any additional parameters are passed to all view() calls.
         """
         raise NotImplementedError("This method must be implemented!")

@@ -189,9 +189,12 @@ def getData(file : str, prefix = "Tensor") -> List[str]:
 def writeFunction(file, function_name : str, kwargs_name : str = "kwargs"):
   function = """
   def {0}(self, *args, **{1}):
+    # If the internals are inaccessible, treat this as a call on SO3vecArr.
     if self.can_access_internals():
-      args, {1} = self.cleanChildTypeInput(*args, **{1})
-      return self._getVec().{0}(*args, **kwargs)
+      args, {1} = self.extractChildTypeInput(*args, **{1})
+      return self._getVec().{0}(*args, **{1})
+
+    # Else, try to propegate to the underlying parts as tensors.
     else:
       results = []
       parts = self._getParts()
@@ -200,12 +203,8 @@ def writeFunction(file, function_name : str, kwargs_name : str = "kwargs"):
       for i in range(len(parts)):
         part = parts[i]
         
-        part_args = list(args)
-        part_{1} = {1}.copy()
-        
         # Clean the input
-        part_args, part_{1} = self.cleanChildTypeInput(*part_args, **part_{1})
-        part_args, part_{1} = self.cleanTensorInput(*part_args, **part_{1})
+        part_args, part_{1} = self.cleanForPartsCall(part = part, *args, **{1})
 
         # Call the underlying function with modifies parameters.
         results.append(part.{0}(*part_args, **part_{1}))
@@ -250,45 +249,49 @@ class TensorRecurser:
     \"""
     self._child_type = child_type
 
-  def _getParts(self):
-    return self._getVec().parts_
+  def _getParts(self) -> List[torch.Tensor]:
+    return self._getVec().parts
 
-  def cleanChildTypeInput(self, *args, **kwargs):
+  def extractChildTypeInput(self, *args, **kwargs):
     # Modify all |args| that are PointCloud instances to just be the
     # specific part we care about.
     args = list(args)
     for i, arg in enumerate(args):
       if isinstance(arg, self._child_type):
-        part_args[i] = arg._getParts()[i]
+        args[i] = arg._getVec()
+
+    # Do the same for |kwargs|.
+    kwargs = kwargs.copy()
+    for key, value in kwargs.items():
+      if isinstance(value, self._child_type):
+        kwargs[key] = value._getVec()
+
+    return args, kwargs
+
+  def cleanForPartsCall(self, part, *args, **kwargs):
+    # Modify all |args| that are PointCloud instances to just be the
+    # specific part we care about.
+    args = list(args)
+    for i, arg in enumerate(args):
+      if isinstance(arg, self._child_type):
+        args[i] = arg._getParts()[i]
+      elif isinstance(arg, torch.Tensor):
+        assert arg.size()[-2] == 1
+        new_size = list(arg.size())
+        new_size[-2] = part.size()[-2]
+        args[i] = arg.expand(tuple(new_size))
 
     # Do the same for |kwargs|.
     kwargs = kwargs.copy()
     for key, value in kwargs.items():
       if isinstance(value, self._child_type):
         kwargs[key] = value._getParts()[i]
-
-    return args, kwargs
-
-  def cleanTensorInput(self, *args, **kwargs):
-    # Modify all |args| that are PointCloud instances to just be the
-    # specific part we care about.
-    args = list(args)
-    for i, arg in enumerate(args):
-      elif isinstance(arg, torch.Tensor):
-        assert arg.size()[-2] == 1
-        new_size = list(arg.size())
-        new_size[-2] = part.size()[-2]
-        part_args[i] = arg.expand(tuple(new_size))
-
-    # Do the same for |kwargs|.
-    kwargs = kwargs.copy()
-    for key, value in kwargs.items():
       elif isinstance(value, torch.Tensor):
         assert value.size()[-2] == 1
         new_size = list(value.size())
         new_size[-2] = part.size()[-2]
         kwargs[key] = arg.expand(tuple(new_size))
-    
+
     return args, kwargs
 
 """

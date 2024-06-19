@@ -2,8 +2,8 @@ from functools import partial
 from typing import Callable, TypeVar, Generic
 import torch
 
-from examples.common.layers.mlp_stack import MlpStack
-from examples.common.layers.radial_bessel_mlp import \
+from examples.common.util.mlp_stack import MlpStack
+from examples.common.util.radial_bessel_mlp import \
     RadialBesselMlp, kDefaultFanSize, kDefaultMlpDepth
 
 class RadialBesselMlpStack(MlpStack):

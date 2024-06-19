@@ -1,7 +1,9 @@
 from typing import List
 
 class InternalType:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
         self.tracked_children_ : List[InternalType] = []
         self.internal_depth_ = 0
 

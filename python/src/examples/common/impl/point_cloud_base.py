@@ -1,11 +1,12 @@
+from abc import abstractmethod
 import math
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Iterable, List, Optional, Sequence, Union
 import torch
 
 from gelib import SO3partArr, SO3vecArr
 
 from src.examples.codegen.tensor_recurser_client import TensorRecurserClient
-from examples.common.impl.internal_caller import InternalType
+from examples.common.util.internal_caller import InternalType
 from src.examples.common.point_cloud import PointCloud
 
 class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
@@ -49,32 +50,45 @@ class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
         
     def edge_list(self) -> torch.Tensor: 
         return self.edge_index_
-    
-    def positions(self) -> torch.Tensor:
-        return self.positions_
 
     def max_l(self) -> int:
        return self.values_.getLMax()
     
     def getDistance(self,
                     i : Union[torch.tensor, int],
-                    j : Union[torch.tensor, int]):
-        if isinstance(i, int):
-            assert isinstance(j, int)
-            return self.distances_[i,j]
-        
-        assert isinstance(i, torch.Tensor)
-        assert isinstance(j, torch.Tensor)
-        assert i.size() == j.size()
-        if i.dim() == 0:
-            return self.getDistance(i.item(), j.item())
-        
+                    j : Union[torch.tensor, int]) -> torch.Tensor:
+        if __debug__:
+            if isinstance(i, int):
+                assert isinstance(j, int)
+            else:
+                assert isinstance(i, torch.Tensor)
+                assert isinstance(j, torch.Tensor)
+                assert i.size() == j.size()
+
         return torch.tensor(
             [self.distances_[i[k],j[k]] for k in range(len(i))])
     
-    def getPart(self, l_idx : int) -> SO3partArr:
+    def getVectors(self,
+                   i : Union[torch.tensor, int],
+                   j : Union[torch.tensor, int]) -> torch.Tensor:
+        if __debug__:
+            if isinstance(i, int):
+                assert isinstance(j, int)
+            else:
+                assert isinstance(i, torch.Tensor)
+                assert isinstance(j, torch.Tensor)
+                assert i.size() == j.size()
+
+        i_pos = self.positions_[i]
+        j_pos = self.positions_[j]
+        return i_pos - j_pos
+    
+    def part(self, l_idx : int) -> SO3partArr:
         assert l_idx >= 0 and l_idx <= self.max_l()
         return SO3partArr(self.values_.parts[l_idx])
+    
+    def data(self) -> SO3vecArr:
+        return self.values_
     
     def CGproduct(self,
                   y : Union[PointCloud, SO3vecArr],
@@ -128,13 +142,30 @@ class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
         InternalType.__init__(clone)
         
         original.addChild(clone)
+
+    # PyTorch Geometric support. To be implemented by children.
+    @abstractmethod
+    def ToPygPropegationFormat(self) -> 'PointCloud':
+        """
+        Returns a new view of this object which is formatted as expected for
+        Pytorch Geometric.
+        """
+        raise NotImplementedError("This method must be implemented!")
+
+    @abstractmethod
+    def FromPygPropegationFormat(self) -> 'PointCloud':
+        """
+        Converts back from the Pytorch Geometric Specific format to that
+        expected by the other parts of the codebase.
+        """
+        raise NotImplementedError("This method must be implemented!")
     
     # Similar to PyTorch functions.
-    def allSizes(self, *args, **kwargs):
+    def allSizes(self, *args, **kwargs) -> List[torch.Size]:
         return super().size(*args, **kwargs)
     
-    def allViews(self, sizes : List, *args, **kwargs):
-        assert isinstance(sizes, list), type(sizes)
+    def allViews(self, sizes : Iterable, *args, **kwargs) -> 'PointCloudBase':
+        assert self.can_access_internals()
 
         parts = self._getParts()
         assert len(sizes) == len(parts)
@@ -158,12 +189,16 @@ class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
         return len(self.values_.parts[0])
     
     def expand_as(self, other):
-        assert isinstance(other, PointCloud)
-        assert len(self.values_.parts) == len(other.values_.parts)
+        return self.expand(other.size())
+    
+    def expand(self, size: Sequence[Union[int, torch.SymInt]]):
+        assert len(size) == self.dim()
+        assert size[-2] == 1
 
         results = []
         for i in range(len(self.values_.parts)):
-            results.append(self.values_.parts[i].expand_as(
-                other.values_.parts[i]))
+            new_size = list(size)
+            new_size[-2] == 2 * i + 1
+            results.append(self.part(i).expand(tuple(new_size)))
         
-        return self.CloneWithNewValue(SO3partArr(results))
+        return self._createObject(results)

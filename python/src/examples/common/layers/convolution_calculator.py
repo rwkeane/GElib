@@ -6,7 +6,7 @@ from torch.nn import Linear, Module, ModuleList
 from gelib import SO3partArr, SO3vecArr
 
 from src.examples.common.point_cloud import PointCloud
-from src.examples.common.impl.internal_caller import InternalCaller
+from examples.common.util.internal_caller import InternalCaller
 
 class ConvolutionCalculator(InternalCaller, Module):
     """
@@ -132,13 +132,8 @@ class ConvolutionCalculator(InternalCaller, Module):
             j_arr : torch.Tensor,
             point_cloud : PointCloud) -> SO3partArr:
         # Get the vector
-        i_pos = point_cloud.positions()[i_arr]
-        j_pos = point_cloud.positions()[j_arr]
         distance = point_cloud.getDistance(i_arr, j_arr)
-        assert len(i_pos) == len(j_pos)
-        assert len(i_pos) == len(distance)
-
-        vector = (i_pos - j_pos)
+        vector = point_cloud.getVectors(i_arr, j_arr)
         for k in range(len(vector)):
             vector[k] /= distance[k]
 

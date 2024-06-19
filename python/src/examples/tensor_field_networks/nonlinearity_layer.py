@@ -5,6 +5,10 @@ from torch.nn import Module
 from torch_geometric.data import Data
 from typing import Any, Callable, Generic, List, TypeVar
 
+from gelib import SO3vecArr
+
+from src.examples.common.point_cloud import PointCloud
+
 class TfnNonlinearityLayer(Module):
     """
     Applies an element-wise nonlinearity of type |nonlinearity_fn| to all
@@ -23,46 +27,61 @@ class TfnNonlinearityLayer(Module):
         self.channels_ = channels 
         self.l_in_ = l_in
         self.nonlinearity_ = nonlinearity_fn
-
-        self.reset_parameters()
-
     def reset_parameters(self):
-        l_dim = 2 * self.l_in_ + 1
-        self.real_bias_ = \
-            torch.zeros((l_dim, self.channels_), requires_grad = True)
-        self.imaginary_bias_ = \
-             torch.zeros((l_dim, self.channels_), requires_grad = True)
-        assert self.real_bias_.size() == self.imaginary_bias_.size()
+        if self.real_bias_ == None:
+            return
+        
+        self.real_bias_.reset_parameters()
+        self.imaginary_bias_.reset_parameters()
 
-    def forward(self, data : Data):
-        # x of shape [batch, channel_count, 2l_in + 1, N atoms]
-        assert data.size()[-3] == self.channels_
+    def createBiases(self, point_cloud : PointCloud):
+        size = list(point_cloud.size())[0:-2]
+        size.append(point_cloud.max_l + 1)
+        size = tuple(size)
 
-        data = torch.cat([
-            self.applyZeroNonlinearity(data[...,0,:]).unsqueeze(-2),  # l = 0
-            self.applyNonZeroNonlinearity(data[...,1:,:])  # l > 0
-        ], dim = -2)
-        return data
+        self.real_bias_ = torch.zeros(size)
+        self.imaginary_bias_ = torch.zeros(size)
+
+    def forward(self, data : PointCloud):
+        assert isinstance(data, PointCloud)
+
+        # Calculate all V values.
+        results = [ self.applyZeroNonlinearity(data.part(0)) ]
+        for i in range(1, data.max_l() + 1):
+            part = data.part(i)
+            results.append(self.calculateNorm(part))
+        v_tensor = torch.stack(results)
+
+        # Add bias term.
+        v_tensor = v_tensor + self.getBiasMatrix(data)
+
+        # Apply nonlinearity.
+        v_tensor = self.nonlinearity_(v_tensor)
+
+        # Turn it back into another PointCloud.
+        assert data.max_l() + 1 == v_tensor.size()[-1]
+        results = [ v_tensor[...,0] ]
+        for i in range(1, v_tensor.size()[-1]):
+            part = data.part(i)
+            factor = results[...,i].expand_as(part)
+            results.append(part * factor)
+        
+        return data.CloneWithNewValue(SO3vecArr(results))
     
-    def applyZeroNonlinearity(self, l_zero : torch.Tensor):
-        assert l_zero.dim() >= 2
-
-        bias = torch.complex(self.real_bias_[0,:], self.imaginary_bias_[0,:])
-        while bias.dim() < l_zero.dim():
-            bias = bias.unsqueeze(0)
-        bias = bias.expand_as(l_zero)
-        return self.nonlinearity_(l_zero + bias)
+    def calculateNorm(self, tensor : torch.Tensor):
+        return torch.norm(tensor, dim = -2)
     
-    def applyNonZeroNonlinearity(self, l_all : torch.Tensor):
-        assert l_all.dim() >= 3
+    def getBiasMatrix(self, point_cloud):
+        # Create biases, as the size isn't known until runtime.
+        if self.real_bias_ == None:
+            assert self.imaginary_bias_ == None
+            self.real_bias_ = self.createBiases(point_cloud)
 
-        normed = torch.norm(l_all, dim = -2).unsqueeze(-2).expand_as(l_all)
-        bias = torch.complex(self.real_bias_[1:,:], self.imaginary_bias_[1:,:])
-        while bias.dim() < normed.dim():
-            bias = bias.unsqueeze(0)
-        bias = bias.expand_as(normed)
+        bias = torch.complex(self.real_bias_, self.imaginary_bias_)
 
-        return self.nonlinearity_(normed + bias) * l_all
+        new_size = list(bias.size())
+        new_size[-1] = point_cloud.size()[-1]
+        return bias.unsqueeze(-1).expand(new_size)
     
     def complex_relu(z : torch.Tensor):
         """Applies ReLU to the real and imaginary parts separately."""
