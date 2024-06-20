@@ -5,9 +5,9 @@ from torch_geometric.nn.aggr import Aggregation as PygAggregator
 from gelib import SO3vecArr
 
 from src.examples.common.point_cloud import PointCloud
-from src.examples.common.impl.pyg_point_cloud import PygPointCloud
+from examples.common.impl.pyg.pyg_point_cloud import PygPointCloud
 
-class PointCloudAggregator(PygAggregator):
+class PygPointCloudAggregator(PygAggregator):
     """
     A wrapper around the standard PyG aggregator to allow use with a PointCloud.
     """

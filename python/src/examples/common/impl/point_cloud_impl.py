@@ -5,7 +5,7 @@ from gelib import SO3partArr, SO3vecArr
 
 from src.examples.common.point_cloud import PointCloud
 from src.examples.common.impl.point_cloud_base import PointCloudBase
-from src.examples.common.impl.pyg_point_cloud import PygPointCloud
+from examples.common.impl.pyg.pyg_point_cloud import PygPointCloud
 
 class PointCloudImpl(PointCloudBase):
     def __init__(self,

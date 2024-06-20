@@ -1,12 +1,16 @@
 from typing import List, Optional
 
-from examples.common.util.internal_type import InternalType
+from examples.common.impl.util.internal_type import InternalType
 
 class InternalCaller:
     """
     Used to mark classes that are allowed to call equivariance-breaking
     operations on an InternalType, from all of that class's methods named in
     |internal_methods|.
+
+    NOTE: When using this class, it should be declared FIRST in the list of 
+    parent classes. Else, method resolution order (MRO) may not select the
+    correct __getattributes__() method implementation to call.
 
     WARNING: Do NOT use this unless you REALLY know what you are doing.
     """

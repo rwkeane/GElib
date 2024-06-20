@@ -7,6 +7,7 @@ from src.examples.nequip.nequip_utils import kNegative, kPositive
 from src.examples.nequip.nequip_convolution_layer import NequipConvolutionLayer
 from src.examples.tensor_field_networks.self_interaction_layer import \
     SelfInteractionLayer
+from src.examples.common.point_cloud import PointCloud
 
 class InteractionBlock(torch.nn.Module):
     """
@@ -41,10 +42,12 @@ class InteractionBlock(torch.nn.Module):
         self.second_interaction_.reset_parameters()
         self.convolution_.reset_parameters()
 
-    def forward(self, data):
-        data.x = self.first_interation_.forward(data.x)
-        data = self.convolution_.forward(data)
-        data.x = self.second_interaction_.forward(data.x)
-        data.x = torch.nn.functional.silu(data.x)
+    def forward(self, point_cloud : PointCloud):
+        point_cloud = self.first_interation_.forward(point_cloud)
+        point_cloud = self.convolution_.forward(point_cloud)
+        point_cloud = self.second_interaction_.forward(point_cloud)
+
+        assert False, "The below isnt equivarient! It must be wrong!"
+        point_cloud = torch.nn.functional.silu(point_cloud)
 
         return data

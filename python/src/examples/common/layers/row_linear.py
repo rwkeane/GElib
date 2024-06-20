@@ -7,9 +7,9 @@ from gelib import SO3vecArr
 
 from src.examples.common.point_cloud import PointCloud
 from src.examples.common.impl.point_cloud_base import PointCloudBase
-from src.examples.common.util.internal_caller import InternalCaller
+from examples.common.impl.util.internal_caller import InternalCaller
 
-class ROWLinear(Module, InternalCaller):
+class ROWLinear(InternalCaller, Module):
     """
     A Rotation-Order-Wise linear layer, where a separate linear layer with 
     |in_features| and |out_features| is applied across each rotation order (each

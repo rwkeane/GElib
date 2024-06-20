@@ -2,9 +2,9 @@ from torch.nn import Linear as TorchLinear
 
 from src.examples.common.point_cloud import PointCloud
 from src.examples.common.impl.point_cloud_base import PointCloudBase
-from src.examples.common.util.internal_caller import InternalCaller
+from examples.common.impl.util.internal_caller import InternalCaller
 
-class Linear(TorchLinear, InternalCaller):
+class Linear(InternalCaller, TorchLinear):
     def __init__(self,
                  in_features: int,
                  out_features: int,

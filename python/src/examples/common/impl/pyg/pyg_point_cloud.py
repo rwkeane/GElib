@@ -4,7 +4,7 @@ from gelib import SO3partArr, SO3vecArr
 
 from src.examples.common.impl.point_cloud_base import PointCloudBase
 from src.examples.common.point_cloud import PointCloud
-from src.examples.common.impl.pyg_helper_impl import \
+from examples.common.impl.pyg.pyg_helper_impl import \
     flattenForPygPropegate, undoFlattenForPygPropegate, reshapeInputForPyg, \
         undoReshapeInputForPyg
 

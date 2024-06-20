@@ -6,7 +6,7 @@ import torch
 from gelib import SO3partArr, SO3vecArr
 
 from src.examples.codegen.tensor_recurser_client import TensorRecurserClient
-from examples.common.util.internal_caller import InternalType
+from examples.common.impl.util.internal_caller import InternalType
 from src.examples.common.point_cloud import PointCloud
 
 class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
@@ -192,6 +192,8 @@ class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
         return self.expand(other.size())
     
     def expand(self, size: Sequence[Union[int, torch.SymInt]]):
+        # TODO: Change this to just a base class call once it better handles
+        # equivariance safety.
         assert len(size) == self.dim()
         assert size[-2] == 1
 

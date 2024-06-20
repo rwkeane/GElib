@@ -1,8 +1,8 @@
 from torch_geometric.nn import MessagePassing as PygMessagePassing
 
-from examples.common.util.internal_caller import InternalCaller
+from examples.common.impl.util.internal_caller import InternalCaller
 from src.examples.common.impl.point_cloud_base import PointCloudBase
-from src.examples.common.impl.point_cloud_aggregator import PointCloudAggregator
+from examples.common.impl.pyg.pyg_point_cloud_aggregator import PygPointCloudAggregator
 
 class MessagePassing(InternalCaller, PygMessagePassing):
     """
@@ -14,7 +14,7 @@ class MessagePassing(InternalCaller, PygMessagePassing):
         # Switch out the aggregator.
         if not 'aggr' in kwargs:
             kwargs['aggr'] = 'sum'
-        kwargs['aggr'] = PointCloudAggregator(kwargs['aggr']) 
+        kwargs['aggr'] = PygPointCloudAggregator(kwargs['aggr']) 
         
         self.has_initialized_ = False
 
@@ -46,7 +46,6 @@ class MessagePassing(InternalCaller, PygMessagePassing):
                     assert self.translateFromPyg(result)
                 return newpropegate
             
-            # Translate the 
             elif name == "message":
                 def newmessage(*args, **kwargs):
                     for key in ['x_i', 'x_j']:

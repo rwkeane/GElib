@@ -6,7 +6,7 @@ from torch.nn import Linear, Module, ModuleList
 from gelib import SO3partArr, SO3vecArr
 
 from src.examples.common.point_cloud import PointCloud
-from examples.common.util.internal_caller import InternalCaller
+from examples.common.impl.util.internal_caller import InternalCaller
 
 class ConvolutionCalculator(InternalCaller, Module):
     """
