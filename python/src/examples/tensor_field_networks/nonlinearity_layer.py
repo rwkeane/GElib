@@ -1,9 +1,6 @@
-
-import math
 import torch
 from torch.nn import Module
-from torch_geometric.data import Data
-from typing import Any, Callable, Generic, List, TypeVar
+from typing import Any, Callable
 
 from gelib import SO3vecArr
 

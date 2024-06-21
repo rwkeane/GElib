@@ -38,17 +38,16 @@ class ConvolutionLayerBase(ConvolutionCalculator, MessagePassing):
         assert isinstance(point_cloud, PointCloud)
         result = self.propagate(edge_index = point_cloud.edge_list(),
                                 x = point_cloud)
-        assert isinstance(result, PointCloud)
+        assert isinstance(result, PointCloud), type(result)
         return result
 
     # Constructs message from node j to node i, which is then aggregated as
     # specified in ctor.
     #
     # NOTE: |edge_index| isn't needed because it is part of the |x_j|, but is
-    # required by the PyG base class.
+    # required to be an input by the PyG base class.
     def message(self, x_j : PointCloud, edge_index : torch.Tensor):
         # Call into ConvolutionCalculator for the actual calculations.
-        print("new size", x_j.size())
         assert edge_index.size()[-1] == x_j.size()[-3], x_j.size()
         cg_products = super().forward(x_j)
         assert cg_products != None and isinstance(cg_products, PointCloud)

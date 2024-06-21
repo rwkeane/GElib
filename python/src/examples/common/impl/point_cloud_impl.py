@@ -32,7 +32,7 @@ class PointCloudImpl(PointCloudBase):
             self,
             data : Union[SO3partArr, SO3vecArr, List[SO3partArr]],
             l_value : int = -1) -> PointCloud:
-        assert l_value >= 0 or isinstance(data, SO3vecArr)
+        assert l_value >= 0 or not isinstance(data, SO3partArr)
         
         if isinstance(data, SO3partArr):
            data = SO3vecArr.from_part(data, l_value)

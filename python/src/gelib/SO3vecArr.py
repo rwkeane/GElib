@@ -167,7 +167,7 @@ class SO3vecArr:
         return SO3partArr(self.parts[l_val])
     
     def getLMax(self) -> int:
-        return len(self.parts)
+        return len(self.parts) - 1
 
 
     ## ---- Transport ---------------------------------------------------------------------------------------

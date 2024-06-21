@@ -167,7 +167,8 @@ class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
         assert self.can_access_internals()
 
         parts = self._getParts()
-        assert len(sizes) == len(parts)
+        assert len(sizes) == len(parts), \
+            "{-} vs {1}".format(len(sizes), len(parts))
 
         results = []
         for i in range(len(sizes)):

@@ -50,7 +50,7 @@ class ROWLinear(InternalCaller, Module):
         # NOTE: this layer assumes -3 is the channel dim, of 4+.
         # x of shape [batch, channel_count, 2l_in + 1, N atoms]
         assert isinstance(point_cloud, PointCloudBase)
-        assert point_cloud.max_l() == self.max_l_
+        assert point_cloud.max_l() == self.max_l_, "{0} vs {1}".format(point_cloud.max_l(), self.max_l_)
 
         # Operate on the correct dimension.
         if self.dim_ != -1:
@@ -58,14 +58,12 @@ class ROWLinear(InternalCaller, Module):
             
         # Reshape to a form linear layers can process.
         all_sizes = point_cloud.allSizes()
-        point_cloud = point_cloud.allViews(-1, (all_sizes[0])[-1])
+        point_cloud = point_cloud.view(-1, (all_sizes[0])[-1])
 
         # Feed reshaped data in to the linear layer.
-        results = torch.stack(
-            [self.linears_[i].forward(point_cloud.part(i)) \
-                for i in range(point_cloud.max_l() + 1)], -1)
-        point_cloud : PointCloudBase = \
-            point_cloud.CloneWithNewValue(SO3vecArr(results))
+        results = [self.linears_[i].forward(point_cloud.part(i)) \
+                        for i in range(point_cloud.max_l() + 1)]
+        point_cloud : PointCloudBase = point_cloud.CloneWithNewValue(results)
 
         # Reshape the point cloud back to the original shape, with modified last
         # dimension if the linear layers changed it.

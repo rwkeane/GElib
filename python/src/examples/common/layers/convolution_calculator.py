@@ -68,9 +68,22 @@ class ConvolutionCalculator(InternalCaller, Module):
         sh_per_channel = sh_per_channel.expand(tuple(new_size))
         sh_per_channel = \
             point_cloud.CloneWithNewValue(sh_per_channel, self.l_max_)
-
+            
         # Calculate CG product.
         representation = self.getPointCloudRepresentation(point_cloud)
+        print("representation", representation)
+
+        return representation
+
+
+
+
+
+
+
+
+
+
         assert isinstance(representation, PointCloud)
         assert representation.size()[:-2] == point_cloud.size()[:-2], \
             "{0} vs {1}".format(representation.size(), point_cloud.size())
@@ -78,8 +91,6 @@ class ConvolutionCalculator(InternalCaller, Module):
         # sh_per_channel.expand_as(representation)
         cg_products = representation.CGproduct(sh_per_channel, self.l_max_)
         
-        # assert cg_products.size()[-1] == point_cloud.size()[-1], \
-        #     "{0} vs {1}".format(cg_products.size(), point_cloud.size())
         return cg_products
 
     def getPointCloudRepresentation(self, x_j : PointCloud) -> PointCloud:

@@ -1,8 +1,7 @@
 from typing import Optional
 import torch
 from torch_geometric.nn.aggr import Aggregation as PygAggregator
-
-from gelib import SO3vecArr
+from torch_geometric.nn.resolver import aggregation_resolver as aggr_resolver
 
 from src.examples.common.point_cloud import PointCloud
 from examples.common.impl.pyg.pyg_point_cloud import PygPointCloud
@@ -13,7 +12,7 @@ class PygPointCloudAggregator(PygAggregator):
     """
     def __init__(self, aggregation = "sum"):
         super().__init__()
-        self.__agg_type = aggregation
+        self.__agg_type = aggr_resolver(aggregation)
 
     def forward(self, cloud: PointCloud, index: Optional[torch.Tensor] = None,
             ptr: Optional[torch.Tensor] = None, dim_size: Optional[int] = None,
@@ -24,10 +23,9 @@ class PygPointCloudAggregator(PygAggregator):
         for i in range(len(cloud.values_.parts)):
             print("Aggregated ", i, cloud.size())
             part = cloud.values_.parts[i]
-            size = (cloud.source_size_[i])[0]
-            reduction =  self.reduce(
-                part, index, ptr, size, dim, reduce=self.__agg_type)
+            reduction = self.__agg_type.forward(part, index, ptr, dim_size, dim)
             results.append(reduction)
 
-        return cloud.CloneWithNewValue(SO3vecArr(results))
+        new_cloud = cloud.CloneWithNewValue(results)
+        return new_cloud
             

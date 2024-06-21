@@ -82,7 +82,7 @@ class MessagePassing(InternalCaller, PygMessagePassing):
                     else:
                         assert False
                     result = attr(*args, **kwargs)
-                    assert self.translateFromPyg(result)
+                    return self.translateFromPyg(result)
                 return newpropegate
             
             elif name == "message":
