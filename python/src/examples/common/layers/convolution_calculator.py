@@ -66,7 +66,8 @@ class ConvolutionCalculator(InternalCaller, Module):
         new_size = list(sh_per_channel.size())
         new_size[-2] = sh_per_channel.size()[-2]
         sh_per_channel = sh_per_channel.expand(tuple(new_size))
-        sh_per_channel = SO3vecArr.from_part(sh_per_channel, self.l_max_)
+        sh_per_channel = \
+            point_cloud.CloneWithNewValue(sh_per_channel, self.l_max_)
 
         # Calculate CG product.
         representation = self.getPointCloudRepresentation(point_cloud)
@@ -74,6 +75,7 @@ class ConvolutionCalculator(InternalCaller, Module):
         assert representation.size()[:-2] == point_cloud.size()[:-2], \
             "{0} vs {1}".format(representation.size(), point_cloud.size())
 
+        # sh_per_channel.expand_as(representation)
         cg_products = representation.CGproduct(sh_per_channel, self.l_max_)
         
         # assert cg_products.size()[-1] == point_cloud.size()[-1], \
@@ -117,7 +119,7 @@ class ConvolutionCalculator(InternalCaller, Module):
     
         # Get rid of the extra dimension from MLP application.
         assert radial_values.size()[-2] == 1, radial_values.size()
-        radial_values = radial_values.squeeze(-2).transpose(-2, -1)
+        radial_values = radial_values.squeeze(-2).permute(-2, -1, -3)
         assert radial_values.dim() >= 3, radial_values.size()
 
         return radial_values
@@ -140,7 +142,7 @@ class ConvolutionCalculator(InternalCaller, Module):
         # Extend in a new dimension by copying once per channel
         # spharm expects (batch_size, 3 (dimensions), N)
         assert vector.size()[-1] == 3
-        vector = vector.unsqueeze(-1).transpose(0, -1)
+        vector = vector.unsqueeze(-1)
 
         # Return the Spherical Harmonic associated with it.
         return SO3partArr.spharm(self.l_filter_, vector)

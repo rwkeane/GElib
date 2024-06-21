@@ -22,7 +22,7 @@ class PygPointCloudAggregator(PygAggregator):
 
         results = []
         for i in range(len(cloud.values_.parts)):
-            print("Aggregated ", i)
+            print("Aggregated ", i, cloud.size())
             part = cloud.values_.parts[i]
             size = (cloud.source_size_[i])[0]
             reduction =  self.reduce(

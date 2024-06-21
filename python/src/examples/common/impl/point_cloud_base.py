@@ -23,10 +23,7 @@ class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
       assert values != None and isinstance(values, SO3vecArr), values
 
       data_point_count = positions.size()[0]
-      if __debug__:
-          tau = values.tau()
-          for t in tau:
-              assert t == data_point_count, values
+      assert data_point_count == values.parts[0].size()[-3], values
 
       self.positions_ = positions
       self.values_ = values
@@ -94,34 +91,36 @@ class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
                   y : Union[PointCloud, SO3vecArr],
                   max_l : Optional[int] = None) -> PointCloud:
         if isinstance(y, PointCloud):
-            y = y.values_
+            y = y.data()
       
         assert isinstance(y, SO3vecArr)
         if max_l == None:
             max_l = -1
-        return self.CloneWithNewValue(self.values_.CGproduct(y, max_l))
+
+        cg_product = self.data().CGproduct(y, max_l)
+        return self.CloneWithNewValue(cg_product)
 
     def ReducingCGproduct(self,
                           y : Union[PointCloud, SO3vecArr],
                           max_l : Optional[int] = None) -> PointCloud:
         if isinstance(y, PointCloud):
-            y = y.values_
+            y = y.data()
         
         assert isinstance(y, SO3vecArr)
         if max_l == None:
             max_l = -1
-        return self.CloneWithNewValue(self.values_.ReducingCGproduct(y, max_l))
+        return self.CloneWithNewValue(self.data().ReducingCGproduct(y, max_l))
 
     def DiagCGproduct(self,
                       y : Union[PointCloud, SO3vecArr],
                       max_l : Optional[int] = None) -> PointCloud:
         if isinstance(y, PointCloud):
-            y = y.values_
+            y = y.data()
         
         assert isinstance(y, SO3vecArr)
         if max_l == None:
             max_l = -1
-        return self.CloneWithNewValue(self.values_.DiagCGproduct(y, max_l))
+        return self.CloneWithNewValue(self.data().DiagCGproduct(y, max_l))
     
     def _getVec(self):
        return self.values_
@@ -176,7 +175,7 @@ class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
             kwargs["size"] = sizes[i]
             results.append(part.view(*args, **kwargs))
 
-        return self._createObject(results)
+        return self.CloneWithNewValue(results)
 
     # Overrides to simplify python usage.
     def size(self, *args, **kwargs) -> torch.Size:
@@ -203,4 +202,4 @@ class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
             new_size[-2] == 2 * i + 1
             results.append(self.part(i).expand(tuple(new_size)))
         
-        return self._createObject(results)
+        return self.CloneWithNewValue(results)

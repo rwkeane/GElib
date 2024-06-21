@@ -13,6 +13,8 @@ class InternalCaller:
     correct __getattributes__() method implementation to call.
 
     WARNING: Do NOT use this unless you REALLY know what you are doing.
+
+    TODO: Change this to a decorator.
     """
     def __init__(self,
                  internal_methods : Optional[List[str]] = None,

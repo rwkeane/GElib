@@ -12,7 +12,7 @@ class SelfInteractionLayer(ROWLinear):
         filters = [i == 0 for i in range(l_filter + 1)]
         super().__init__(in_features = in_channels,
                          out_features = out_channels,
-                         dim = -3,
+                         dim = -4,
                          max_l = l_filter,
                          biases = filters)
         
@@ -26,9 +26,9 @@ class SelfInteractionLayer(ROWLinear):
         # NOTE: this layer assumes -3 is the channel dim, of 4+.
         # x of shape [batch, ..., channel_count, 2l_in + 1, N atoms]
         assert isinstance(x, PointCloud)
-        assert x.size()[-3] == self.in_channels_
+        assert x.size()[-4] == self.in_channels_
         
         y = super().forward(x)
 
-        assert y.size()[-3] == self.out_channels_
+        assert y.size()[-4] == self.out_channels_
         return y

@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import  List, Optional, Sequence, Union
+from typing import  Iterable, List, Optional, Sequence, Union
+import uuid
 
 import torch
 
@@ -8,7 +9,16 @@ from gelib import SO3partArr, SO3vecArr
 from src.examples.codegen.tensor_recurser import TensorRecurser
 
 class PointCloud(TensorRecurser):
+    """
+    Represents a point cloud, and acts as a wrapper around SO3vecArr while
+    exposing a number of useful operations and enforcing that equivariance is
+    maintained when such operations are used.
+
+    New instances should be constructed using PointCloudFactory, or by using
+    methods of this class.
+    """
     def __init__(self, *args, **kwargs):
+        self.id_ = uuid.uuid4()
         super().__init__(*args, **kwargs)
         
     # Accessing data related to the underlying graph and tensor representations.
@@ -91,9 +101,10 @@ class PointCloud(TensorRecurser):
 
     # Wrappers used for supporting PyTorch-like functionality.
     @abstractmethod
-    def CloneWithNewValue(self,
-                          data : Union[SO3partArr, SO3vecArr],
-                          l_value : int = -1) -> 'PointCloud':
+    def CloneWithNewValue(
+            self,
+            data : Union[SO3partArr, SO3vecArr, Iterable[SO3partArr]],
+            l_value : int = -1) -> 'PointCloud':
         """
         Creates a clone of this oject with the new value |data|. If |data| is
         an SO3partArr, it is converted to an SO3vecArr with maximum l value 
@@ -111,3 +122,10 @@ class PointCloud(TensorRecurser):
         passed to all size() calls.
         """
         raise NotImplementedError("This method must be implemented!")
+    
+    def Clone(self) -> 'PointCloud':
+        return self.CloneWithNewValue(self.data())
+    
+    def __str__(self):
+        # return self.data().__str__()
+        return "ID: {0} type: {1}".format(self.id_, type(self))

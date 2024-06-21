@@ -111,8 +111,7 @@ class SO3vecArr:
     @staticmethod
     def from_part(part : SO3partArr, max_l : int,device='cpu') -> 'SO3vecArr':
         assert isinstance(part, SO3partArr)
-        tau = [ 0 for _ in range(max_l + 1)]
-        tau[part.getl()] = part.size()[-1]
+        tau = [ part.size()[-1] for _ in range(max_l + 1)]
         result = SO3vecArr.zeros(part.getb(), part.get_adims(), tau, device)
         result.parts[part.getl()] = part
         return result

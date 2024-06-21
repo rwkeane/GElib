@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Iterable, List, Optional, Sequence, Union
 import torch
 
 from gelib import SO3partArr, SO3vecArr
@@ -28,13 +28,21 @@ class PointCloudImpl(PointCloudBase):
         raise NotImplementedError(
             "This instance is not in PyG Propegation Format!")
 
-    def CloneWithNewValue(self,
-                          data : Union[SO3partArr, SO3vecArr],
-                          l_value : int = -1) -> PointCloud:
+    def CloneWithNewValue(
+            self,
+            data : Union[SO3partArr, SO3vecArr, List[SO3partArr]],
+            l_value : int = -1) -> PointCloud:
         assert l_value >= 0 or isinstance(data, SO3vecArr)
         
         if isinstance(data, SO3partArr):
            data = SO3vecArr.from_part(data, l_value)
+
+        elif not isinstance(data, SO3vecArr) and hasattr(data, '__iter__'):
+            assert len(data) > 0
+            if isinstance(data[0], torch.Tensor):
+                vec = SO3vecArr()
+                vec.parts = list(data)
+                data = vec
         
         assert isinstance(data, SO3vecArr)
 
