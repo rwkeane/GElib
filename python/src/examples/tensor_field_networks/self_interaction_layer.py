@@ -3,8 +3,7 @@ import torch
 
 from gelib import SO3vecArr
 
-from examples.common.layers.row_linear import \
-    ROWLinear
+from src.examples.common.layers.row_linear import ROWLinear
 from src.examples.common.point_cloud import PointCloud
 
 class SelfInteractionLayer(ROWLinear):
@@ -26,9 +25,9 @@ class SelfInteractionLayer(ROWLinear):
         # NOTE: this layer assumes -3 is the channel dim, of 4+.
         # x of shape [batch, ..., channel_count, 2l_in + 1, N atoms]
         assert isinstance(x, PointCloud)
-        assert x.size()[-4] == self.in_channels_
+        assert x.size()[-4] == self.in_channels_, x.size()
         
         y = super().forward(x)
 
-        assert y.size()[-4] == self.out_channels_
+        assert y.size()[-4] == self.out_channels_, y.size()
         return y

@@ -100,6 +100,7 @@ class MessagePassing(InternalCaller, PygMessagePassing):
         
         return attr
     
+    # TODO: This function should also override the returned |size| parameters.
     def _collect(
         self,
         args: Set[str],

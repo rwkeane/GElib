@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import math
-from typing import Any, Iterable, List, Optional, Sequence, Union
+from typing import Any, Iterable, List, Optional, Sequence, Union, overload
 import torch
 
 from gelib import SO3partArr, SO3vecArr
@@ -8,6 +8,7 @@ from gelib import SO3partArr, SO3vecArr
 from src.examples.codegen.tensor_recurser_client import TensorRecurserClient
 from examples.common.impl.util.internal_caller import InternalType
 from src.examples.common.point_cloud import PointCloud
+import torch.types
 
 class PointCloudBase(InternalType, PointCloud, TensorRecurserClient):
     def __init__(self,

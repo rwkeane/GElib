@@ -1,11 +1,11 @@
 import torch
-from functools import partial
-from torch.nn import Linear, Module, ModuleList
 
-from ...gelib import SO3vecArr
-
-from examples.common.util.radial_bessel_mlp_stack import RadialBesselMlpStack
-from examples.common.layers.convolution_calculator import ConvolutionCalculator
+from src.examples.common.point_cloud import PointCloud
+from src.examples.common.layers.row_linear import ROWLinear
+from src.examples.common.util.radial_bessel_mlp_stack import \
+     RadialBesselMlpStack
+from src.examples.common.layers.convolution_calculator import \
+    ConvolutionCalculator
 
 class APart(ConvolutionCalculator):
     """
@@ -20,9 +20,10 @@ class APart(ConvolutionCalculator):
         super(ConvolutionCalculator, self).__init__(channels, l_filter)
 
         # Weights for point representations.
-        self.representation_weights_ = ModuleList([])
-        for _ in range(l_filter):
-            self.representation_weights_.append(Linear(channels, channels))
+        #
+        # TODO: Verify in code that this is in fact rotation-order-wise. It
+        # isn't fully clear from the paper.
+        self.linear_ = ROWLinear(channels, channels, l_filter, dim = -4)
 
         # TODO: Check these values against the paper.
         kRadialCutoff = 1.0
@@ -39,13 +40,10 @@ class APart(ConvolutionCalculator):
         super().reset_parameters()
 
         self.r_mlps_.reset_parameters()
+        self.linear_.reset_parameters()
 
-        for module in self.representation_weights_:
-            assert isinstance(module, Linear)
-            module.reset_parameters()
-
-    def forward(self, x_j : SO3vecArr, edge_index : torch.Tensor):
-        return super().forward(x_j, edge_index)
+    def forward(self, point_cloud : PointCloud):
+        return super().forward(point_cloud)
 
     # ConvolutionCalculate abstract method.
     def calculateRadialValues(
@@ -59,23 +57,12 @@ class APart(ConvolutionCalculator):
         return mlp_results
   
     # ConvolutionCalculator virtual method.
-    def getPointRepresentation(self, x_j : torch.Tensor) -> torch.Tensor:
-        # x_j represents the "source" nodes, and is of shape
-        # [<some_num_nodes>, ..., channel_count, 2l_in + 1, N atoms].
-        assert x_j.size()[1] == len(self.representation_weights_)
+    def getPointCloudRepresentation(self,
+                                    point_cloud : PointCloud) -> PointCloud:
+        assert point_cloud.dim() >= 5, point_cloud.allSizes()
+        assert point_cloud.size()[-4] == self.channels_
 
-        # Resize to [X, l_index, channel].
-        transposed_size = x_j.transpose(-3, -1).size()
-        x_j = x_j.reshape(-1, transposed_size[-2], transposed_size[-1])
+        point_cloud = self.linear_.forward(point_cloud)
 
-        # Apply linear layers.
-        result = torch.stack(
-            [self.representation_weights_[i].forward(x_j[:,i,:]) \
-                for i in range(len(self.representation_weights_))],
-            dim = -2
-        )
-
-        # Un-swap and un-resize.
-        result = result.reshape(transposed_size).transpose(-3, -1)
-
-        return result
+        assert point_cloud.size()[-4] == self.channels_
+        return point_cloud

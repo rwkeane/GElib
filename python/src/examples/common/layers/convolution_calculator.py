@@ -1,7 +1,6 @@
 from abc import abstractmethod
-from enum import Enum 
 import torch
-from torch.nn import Linear, Module, ModuleList
+from torch.nn import Module
 
 from gelib import SO3partArr, SO3vecArr
 
@@ -71,8 +70,8 @@ class ConvolutionCalculator(InternalCaller, Module):
             
         # Calculate CG product.
         representation = self.getPointCloudRepresentation(point_cloud)
-        print("representation", representation)
 
+        # TODO: Get rid of this return and do the full CG product!
         return representation
 
 

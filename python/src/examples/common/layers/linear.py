@@ -5,6 +5,10 @@ from src.examples.common.impl.point_cloud_base import PointCloudBase
 from examples.common.impl.util.internal_caller import InternalCaller
 
 class Linear(InternalCaller, TorchLinear):
+    """
+    Wrapper around PyTorch Linear layer to avoid exposing dimension-swapping,
+    which could break equivariance.
+    """
     def __init__(self,
                  in_features: int,
                  out_features: int,
@@ -16,27 +20,21 @@ class Linear(InternalCaller, TorchLinear):
         self.in_features_ = in_features
         self.out_features_ = out_features
         self.dim_ = dim
+        
+        assert self.dim_ != -2, \
+            "Modifying dimension -2 would break equivariance!"
 
     def forward(self, point_cloud : PointCloud) -> PointCloud:
         assert isinstance(point_cloud, PointCloudBase)
+        assert self.dim_ - point_cloud.dim() != -2, \
+            "Modifying dimension -2 would break equivariance!"
         
         # Operate on the correct dimension.
         if self.dim_ != -1:
             point_cloud = point_cloud.transpose(self.dim_, -1)
-            
-        all_sizes = point_cloud.allSizes()
-        point_cloud = point_cloud.allViews(-1, (all_sizes[0])[-1])
 
         point_cloud = super().forward(point_cloud)
         assert isinstance(point_cloud, PointCloudBase)
-
-        if self.in_features_ != self.out_features_:
-          for i in range(len(all_sizes)):
-              size = list(all_sizes[i])
-              size[-1] == self.out_features_
-              all_sizes[i] = tuple(size)
-
-        point_cloud = point_cloud.allViews(all_sizes)
 
         if self.dim_ != -1:
             point_cloud = point_cloud.transpose(self.dim_, -1)

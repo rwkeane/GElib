@@ -11,7 +11,7 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 
-from src.examples.tensor_field_networks.nonlinearity_layer import TfnNonlinearityLayer
+from examples.tensor_field_networks.tfn_nonlinearity_layer import TfnNonlinearityLayer
 from src.examples.tensor_field_networks.point_convolution_layer import PointConvolutionLayer
 from src.examples.tensor_field_networks.self_interaction_layer import SelfInteractionLayer
 from src.examples.tensor_field_networks.tfn_utils import createGraphData

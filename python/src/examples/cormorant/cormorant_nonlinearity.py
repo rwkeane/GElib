@@ -1,12 +1,9 @@
-import math
 import torch
 from torch.nn import Linear, Module, Parameter, ReLU, Sequential
-from torch_geometric.data import Data
-from torch_geometric.nn import MessagePassing
-from torch_geometric.utils import add_self_loops, degree
-from typing import Any, Callable, Generic, List, TypeVar
 
-import gelib
+from gelib import SO3partArr, SO3vecArr
+
+from src.examples.common.util.message_passing import MessagePassing
 
 class CormorantNonlinearity(MessagePassing):
     def __init__(self,
@@ -68,11 +65,11 @@ class CormorantNonlinearity(MessagePassing):
 
         return cg_products
     
-    def getFilterValue(self, i, j) -> gelib.SO3partArr:
+    def getFilterValue(self, i, j) -> SO3partArr:
         # Get a copy of the spherical harmonics for each channel
         spherical_harmonic = self.getSphericalHarmonicsForFilter(i, j)
         spherical_harmonic_arr = \
-            gelib.SO3partArr.createCopies(spherical_harmonic, self.in_channels)
+            SO3partArr.createCopies(spherical_harmonic, self.in_channels)
         assert len(spherical_harmonic_arr) == len(self.r_mlps)
         
         # Apply the learned radial function
@@ -86,11 +83,11 @@ class CormorantNonlinearity(MessagePassing):
     # layer.
     # NOTE: Does NOT depend on channel number. In the original TFN paper, this
     # is the Y_m^{(l_f)}(\hat{r}) spherical harmonic for the filter
-    def getSphericalHarmonicsForFilter(self, i, j) -> gelib.SO3part:
+    def getSphericalHarmonicsForFilter(self, i, j) -> SO3partArr:
         # Get the vector
         i_pos = self.point_positions[i]
         j_pos = self.point_positions[j]
         vector = (i_pos - j_pos) / self.point_distances[i,j]
 
         # Return the Spherical Harmonic associated with it
-        return gelib.SO3part.spharm(self.l_filter, vector)
+        return SO3partArr.spharm(self.l_filter, vector)

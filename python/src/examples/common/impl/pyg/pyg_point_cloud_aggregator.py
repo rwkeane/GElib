@@ -21,7 +21,6 @@ class PygPointCloudAggregator(PygAggregator):
 
         results = []
         for i in range(len(cloud.values_.parts)):
-            print("Aggregated ", i, cloud.size())
             part = cloud.values_.parts[i]
             reduction = self.__agg_type.forward(part, index, ptr, dim_size, dim)
             results.append(reduction)

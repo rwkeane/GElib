@@ -123,6 +123,24 @@ class PointCloud(TensorRecurser):
         """
         raise NotImplementedError("This method must be implemented!")
     
+    def assertValid(self):
+        """
+        Performs basic validations on this instance, with assertion errors if
+        |throw_on_error| is True.
+        """
+        if __debug__:
+            assert self.max_l() > 0, self.max_l()
+            
+            first = self.part(0)
+            assert first.size()[-2] == 1, self.allSizes()
+            for i in range(1, self.max_l()):
+                assert first.dim() == self.part(i).dim(), self.allSizes()
+
+                part_size = self.part(i).size()
+                assert first.size()[:-2] == part_size[:-2],self.allSizes()
+                assert first.size()[-1] == part_size[-1], self.allSizes()
+                assert part_size[-2] == 2 * i + 1, self.allSizes()
+    
     def Clone(self) -> 'PointCloud':
         return self.CloneWithNewValue(self.data())
     

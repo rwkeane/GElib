@@ -1,6 +1,6 @@
 from typing import Callable, TypeVar, Generic
 import torch
-from torch.nn import Linear, Module, ModuleList, Parameter
+from torch.nn import Module
 
 TMlpType = TypeVar('TMlpType') 
 class MlpStack(Generic[TMlpType], Module):

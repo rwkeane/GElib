@@ -42,6 +42,8 @@ class PointCloudImpl(PointCloudBase):
             if isinstance(data[0], torch.Tensor):
                 vec = SO3vecArr()
                 vec.parts = list(data)
+                assert vec.getLMax() == len(data) - 1, \
+                    "{0} vs {1}".format(vec.getLMax(), len(data))
                 data = vec
         
         assert isinstance(data, SO3vecArr)

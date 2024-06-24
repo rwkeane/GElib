@@ -7,8 +7,9 @@ import torch.optim as optim
 
 
 from src.examples.common.point_cloud_factory import PointCloudFactory
+from src.examples.common.point_cloud import PointCloud
 from src.examples.tensor_field_networks.tfn_utils import createOnesTensor
-from src.examples.tensor_field_networks.nonlinearity_layer import \
+from examples.tensor_field_networks.tfn_nonlinearity_layer import \
     TfnNonlinearityLayer
 from src.examples.tensor_field_networks.point_convolution_layer import \
     PointConvolutionLayer
@@ -28,24 +29,33 @@ tetris = [[(0, 0, 0), (0, 0, 1), (1, 0, 0), (1, 1, 0)],  # chiral_shape_1
           [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]]  # L
 
 dataset = [ np.array(points_) for points_ in tetris ]
-num_classes = len(dataset)
+kNumClasses = len(dataset)
 
 class Readout(torch.nn.Module):
     def __init__(self, channels_in, num_classes):
         super(Readout, self).__init__()
         
         self.lin = torch.nn.Linear(
-            channels_in, num_classes, bias=True, dtype=torch.cfloat)
+            channels_in, num_classes, bias = True, dtype = torch.cfloat)
         self.input_dims = channels_in
         self.num_classes = num_classes
 
     def reset_parameters(self):
         self.lin.reset_parameters()
         
-    def forward(self, inputs):
-        inputs = torch.mean(inputs.squeeze(),dim=0)
-        inputs = self.lin.forward(inputs).unsqueeze(0)
-        return inputs
+    def forward(self, point_cloud : PointCloud):
+        assert isinstance(point_cloud, PointCloud)
+
+        part = point_cloud.part(0)
+        assert part.size()[-1] == 1, "Should only have 1 feature"
+        assert part.size()[-2] == 1, "Should be l=0 dimension"
+        part = part.squeeze(dim = -2).squeeze(dim = -1)
+        assert part.dim() == 3
+
+        part = part.mean(dim = -1)  # Mean across atom
+        assert part.dim() == 2
+        part = self.lin.forward(part)
+        return part
     
 class TetrisLayer(torch.nn.Module):
     def __init__(self, in_channels, out_channels, l_value):
@@ -67,17 +77,18 @@ class TetrisLayer(torch.nn.Module):
         input = self.point_convolution_.forward(input)
         input = self.self_interation_.forward(input)
         input = self.nonlinearity_.forward(input)
+        input.assertValid()
         return input
     
 class TetrisNetwork(torch.nn.Module):
-    def __init__(self, l_value, num_classes_in = num_classes):
+    def __init__(self, l_value, num_classes_in = kNumClasses):
         super().__init__()
 
         # Create all layers
         assert l_value != None
-        self.layers_ = [TetrisLayer(1, 4, l_value),
-                       TetrisLayer(4, 4, l_value),
-                       TetrisLayer(4, 4, l_value)]
+        self.layers_ = [ TetrisLayer(1, 4, l_value),
+                         TetrisLayer(4, 4, l_value),
+                         TetrisLayer(4, 4, l_value) ]
         self.layers_ = torch.nn.ModuleList(self.layers_)
 
         # Set the readout function to be called at the end
@@ -92,13 +103,12 @@ class TetrisNetwork(torch.nn.Module):
         for layer in self.layers_:
             data = layer.forward(data)
 
-        return self.readout_.forward(data.x[0][0])
+        return self.readout_.forward(data)
 
 if __name__=="__main__": 
   kLValue = 1
   model = TetrisNetwork(l_value = kLValue)
   tetris_tensor = torch.Tensor(tetris)
-  labels = torch.arange(len(tetris_tensor)).unsqueeze(-1)
 
   criterion = torch.nn.CrossEntropyLoss()
   optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -110,14 +120,16 @@ if __name__=="__main__":
       order = np.arange(len(tetris_tensor))
   #     np.random.shuffle(order)
       for i in order:
-          label = labels[i]
+          label = torch.zeros(kNumClasses)
+          label[i] = 1
+          label.unsqueeze(0)
           # rij, rbf = rij_list[i].unsqueeze(0), rbf_list[i].unsqueeze(0)
           # zero the parameter gradients
           optimizer.zero_grad()
 
           data = PointCloudFactory.CreatePointCloud(
               tetris_tensor[i], input_tensor)
-          outputs = model.forward(data)
+          outputs = model.forward(data).squeeze(0)
           loss = criterion(torch.abs(outputs), label)
     
           loss.backward()
