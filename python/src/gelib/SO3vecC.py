@@ -13,7 +13,7 @@ from gelib_base import SO3part as _SO3part
 from gelib_base import SO3vec as _SO3vec
 from gelib_base import CGproduct as _CGproduct
 
-from . import SO3partC as SO3partC
+from gelib import SO3partC as SO3partC
 
 
 def device_id(device):

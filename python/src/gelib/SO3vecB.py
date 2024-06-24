@@ -12,7 +12,7 @@ from cnine import ctensorb
 from gelib_base import SO3type as _SO3type
 from gelib_base import SO3partB as _SO3partB
 from gelib_base import SO3vecB as _SO3vecB
-from . import SO3partB
+from gelib import SO3partB
 
 # ----------------------------------------------------------------------------------------------------------
 # ---- SO3vecB ---------------------------------------------------------------------------------------------
@@ -155,6 +155,7 @@ class SO3vecB(torch.Tensor):
         
     def __radd__(self,y):
         print("radd")
+        # TODO: What is |obj| here?
         obj.add(y)
         
 

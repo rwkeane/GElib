@@ -13,8 +13,8 @@ from gelib_base import SO3bipart as _SO3bipart
 from gelib_base import SO3bivecArray as _SO3bivecArr
 from gelib_base import SO3bitype as _SO3bitype
 
-from . import SO3vecArrC
-from . import CGtransform
+from gelib import SO3vecArrC
+from gelib import CGtransform
 
 
 def device_id(device):

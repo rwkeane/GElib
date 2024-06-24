@@ -15,8 +15,8 @@ import torch
 from gelib_base import SO3partB_array as _SO3partB_array
 from gelib_base import SO3vecB_array as _SO3vecB_array
 
-from . import SO3weights, SO3weightsArr, SO3partArr
-from . import DiagCGproductType, DDiagCGproductType
+from gelib import SO3weights, SO3weightsArr, SO3partArr
+from gelib import DiagCGproductType, DDiagCGproductType
 
 
 ## ----------------------------------------------------------------------------------------------------------

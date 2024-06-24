@@ -14,8 +14,8 @@ from gelib_base import CGtransform as _CGtransform
 from gelib_base import SO3bipart as _SO3bipart
 from gelib_base import SO3bivec as _SO3bivec
 
-from . import SO3bipart as SO3bipart
-from . import SO3vecC as SO3vecC
+from gelib import SO3bipart as SO3bipart
+from gelib import SO3vecC as SO3vecC
 
 
 def device_id(device):

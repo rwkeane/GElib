@@ -15,8 +15,8 @@ from gelib_base import SO3partArray as _SO3partArray
 from gelib_base import SO3vecArray as _SO3vecArray
 from gelib_base import CGproduct as _CGproduct
 
-from . import SO3partArrC as SO3partArrC
-from . import SO3vecC as SO3vecC
+from gelib import SO3partArrC as SO3partArrC
+from gelib import SO3vecC as SO3vecC
 
 
 def device_id(device):
