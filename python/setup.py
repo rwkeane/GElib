@@ -1,8 +1,6 @@
 import os
-import torch
 from setuptools import setup
 from setuptools import find_packages
-from torch.utils.cpp_extension import CppExtension, BuildExtension, CUDAExtension
 import time
 from os.path import splitext
 from os.path import basename
@@ -20,6 +18,8 @@ def interpret_bool_string(string:Union[str,bool], _true_values:Tuple[str] = ("TR
 
 
 def main():
+    import torch
+    from torch.utils.cpp_extension import CppExtension, BuildExtension, CUDAExtension
 
     # --- User settings ------------------------------------------------------------------------------------------
     # os.environ['CUDA_HOME']='/usr/local/cuda'
@@ -35,16 +35,9 @@ def main():
 
     # ------------------------------------------------------------------------------------------------------------
     
-#    if 'CUDA_HOME' in os.environ:
-#        print("CUDA found at "+os.environ['CUDA_HOME'])
-#    else:
-#        print("No CUDA found, installing without GPU support.")
-#        compile_with_cuda=False
-
     cwd = os.getcwd()
     cnine_folder = "/../../cnine/"
     ext_cuda_folder = "../cuda/"
-    #ext_cuda_folder = "../../GElib-cuda/cuda/"
 
     _include_dirs = [cwd + cnine_folder + '/include',
 		     cwd + cnine_folder + '/combinatorial',
@@ -57,23 +50,11 @@ def main():
 		     cwd + cnine_folder + '/tensors/functions',
 		     cwd + cnine_folder + '/wrappers',
                      cwd + cnine_folder + '/include/cmaps',
-                     #cwd + cnine_folder + '/legacy/scalar',
-                     cwd + cnine_folder + '/objects/matrix',
-                     cwd + cnine_folder + '/tensor_views',
-                     #cwd + cnine_folder + '/tensor_views/functions',
-                     #cwd + cnine_folder + '/objects/tensor_array',
-                     #cwd + cnine_folder + '/objects/tensor_array/cell_maps',
-                     #cwd + cnine_folder + '/objects/tensor_array/cell_ops',
-                     #cwd + cnine_folder + '/objects/labeled',
-                     #cwd + cnine_folder + '/objects/labeled2',
-                     #cwd + cnine_folder + '/objects/ntensor',
-                     #cwd + cnine_folder + '/objects/ntensor/functions',
                      cwd + '/../include',
                      cwd + '/../cuda',
                      cwd + '/../core',
                      cwd + '/../SO3',
                      cwd + '/../O3'
-#                     cwd + '/../SO3/functions'
                      ]
 
 
@@ -81,7 +62,6 @@ def main():
                          '-Wno-sign-compare',
                          '-Wno-deprecated-declarations',
                          '-Wno-unused-variable',
-                         # '-Wno-unused-but-set-variable',
                          '-Wno-reorder',
                          '-Wno-reorder-ctor',
                          '-Wno-overloaded-virtual',
@@ -124,27 +104,12 @@ def main():
     _depends = ['setup.py',
                 'src/gelib.cpp',
                 'bindings/*.cpp'
-    #             'build/*/*'
                 ]
-
-    # sources = ['GElib_py.cpp',
-    #            'SO3part_py.cpp',
-    #            'SO3vec_py.cpp',
-    #            'SO3partArray_py.cpp',
-    #            'SO3vecArray_py.cpp',
-    #             ]
-
-    # ---- Compilation commands ----------------------------------------------------------------------------------
 
     if compile_with_cuda:
         ext_modules = [CUDAExtension('gelib_base', [
             '../../cnine/include/Cnine_base.cu',
             '../../cnine/cuda/TensorView_assign.cu',
-#            '../../cnine/cuda/TensorView_accumulators.cu',
-#            '../../cnine/cuda/BasicCtensorProducts.cu',
-#            '../../cnine/cuda/RtensorUtils.cu',
-#            '../../cnine/cuda/RtensorConvolve2d.cu',
-#            '../../cnine/cuda/RtensorConvolve3d.cu',
             '../cuda/GElib_base.cu',
             '../cuda/SO3part_addCGproduct.cu',
             '../cuda/SO3part_addCGproduct_back0.cu',
@@ -160,13 +125,18 @@ def main():
     else:
         ext_modules = [CppExtension('gelib_base', ['bindings/GElib_py.cpp'],
                                     include_dirs=_include_dirs,
-                                    # sources=sources,
                                     extra_compile_args={
             'cxx': _cxx_compile_args},
             depends=_depends
         )]
 
     setup(name='gelib',
+          version='0.0.0', 
+          setup_requires=[ 
+              'torch', 
+              'numpy',
+              'ninja'
+          ],
           ext_modules=ext_modules,
           packages=find_packages('src'),
           package_dir={'': 'src'},
@@ -174,11 +144,6 @@ def main():
           include_package_data=True,
           zip_safe=False,
           cmdclass={'build_ext': BuildExtension})
-
-    # print("Compilation finished:", time.ctime(time.time()))
-
-    # ------------------------------------------------------------------------------------------------------------
-
 
 if __name__ == "__main__":
     main()
