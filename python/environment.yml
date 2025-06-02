@@ -1,0 +1,20 @@
+name: gelib-env # A suggested environment name
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - cxx-compiler
+  - make
+  - setuptools
+  - wheel
+  - ninja
+  - pip
+  - numpy
+  - pytorch::pytorch
+  - pytorch::torchvision # Companion to pytorch
+  - pytorch::torchaudio # Companion to pytorch
+  - pytorch::cpuonly    # Ensures CPU versions for pytorch components
+  - pip:
+    - -e . # Installs the local package in editable mode from the python/ directory
