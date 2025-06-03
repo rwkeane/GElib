@@ -1,0 +1,6 @@
+# ninja log v5
+2	32691	1748934143842859366	CMakeFiles/gelib_base.dir/python/bindings/GElib_py.cpp.o	f68751e8e3b12382
+11	38	1748934209503964211	deps/cnine/CMakeFiles/cnine.dir/cuda/dummy.cpp.o	4c1c910d9a971c24
+38	90	1748934209555968231	deps/cnine/libcnine.a	d6cae3d63566513d
+11	48896	1748934258299721530	CMakeFiles/gelib_base.dir/python/bindings/GElib_py.cpp.o	f68751e8e3b12382
+48896	49858	1748934259315799467	libgelib_base.so	15e0acaf8797ebe9
