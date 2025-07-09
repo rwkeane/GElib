@@ -199,11 +199,6 @@ class SO3vecArr:
     def get_grad(self):
         return SO3vecArr(*[p.grad for l,p in self.parts.items()])
 
-    def l_max(self) -> int:
-        if len(self.parts) == 0:
-            return 0
-        return max(self.parts.keys())
-
 
     # ---- Operations ---------------------------------------------------------------------------------------
 
