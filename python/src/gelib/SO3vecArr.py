@@ -176,9 +176,6 @@ class SO3vecArr:
         for l,p in self.parts.items():
             r[l]=p.getn()
         return r
-    
-    def get_adims(self):
-        return self.parts[min(self.parts)].get_adims()
 
     def get_type(self):
         "Return the 'type' of the SO3vec, i.e., how many components it has corresponding to l=0,1,2,..."
